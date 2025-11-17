@@ -8,13 +8,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from src.api.routes import control, devices, health, stats
+from src.api.routes import control, devices, health, stats, websocket
 from src.core.config import get_settings
 from src.core.database import close_db, get_db, init_db
 from src.core.exceptions import BandwidthMonitorException
 from src.schemas.response import error_response, success_response
 from src.services.network_monitor import NetworkMonitor
+from src.services.websocket_manager import manager as ws_manager
 from src.utils.logger import get_logger, setup_logging
 
 # Initialize logging
@@ -166,6 +168,14 @@ async def periodic_bandwidth_save():
                 await session.commit()
                 logger.debug(f"Saved bandwidth data for {len(stats)} devices")
 
+                # Broadcast bandwidth stats via WebSocket
+                await ws_manager.broadcast_bandwidth_stats(
+                    {
+                        "total_devices": len(stats),
+                        "devices": stats,
+                    }
+                )
+
         except asyncio.CancelledError:
             logger.info("Bandwidth save task cancelled")
             break
@@ -237,6 +247,10 @@ app.include_router(health.router, prefix=settings.api_prefix, tags=["Health"])
 app.include_router(devices.router, prefix=settings.api_prefix, tags=["Devices"])
 app.include_router(stats.router, prefix=settings.api_prefix, tags=["Statistics"])
 app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
+app.include_router(websocket.router, tags=["WebSocket"])
+
+# Mount static files for dashboard
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/", tags=["Root"])

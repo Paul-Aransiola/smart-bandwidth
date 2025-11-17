@@ -17,8 +17,9 @@ from src.schemas.device import (
     DeviceResponse,
     ThrottleDeviceRequest,
 )
-from src.schemas.response import success_response, error_response
+from src.schemas.response import error_response, success_response
 from src.services.bandwidth_controller import BandwidthController
+from src.services.websocket_manager import manager as ws_manager
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -104,8 +105,13 @@ async def block_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully blocked device: {ip_address}")
+
+        # Broadcast WebSocket update
+        device_data = DeviceResponse.model_validate(device).model_dump()
+        await ws_manager.broadcast_device_update(device_data, "device_blocked")
+
         return success_response(
-            data=DeviceResponse.model_validate(device).model_dump(),
+            data=device_data,
             message=f"Device {ip_address} blocked successfully",
         )
 
@@ -199,8 +205,13 @@ async def unblock_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully unblocked device: {ip_address}")
+
+        # Broadcast WebSocket update
+        device_data = DeviceResponse.model_validate(device).model_dump()
+        await ws_manager.broadcast_device_update(device_data, "device_unblocked")
+
         return success_response(
-            data=DeviceResponse.model_validate(device).model_dump(),
+            data=device_data,
             message=f"Device {ip_address} unblocked successfully",
         )
 
@@ -299,8 +310,13 @@ async def throttle_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully throttled device: {ip_address} to {request.limit_mbps} Mbps")
+
+        # Broadcast WebSocket update
+        device_data = DeviceResponse.model_validate(device).model_dump()
+        await ws_manager.broadcast_device_update(device_data, "device_throttled")
+
         return success_response(
-            data=DeviceResponse.model_validate(device).model_dump(),
+            data=device_data,
             message=f"Device {ip_address} throttled to {request.limit_mbps} Mbps",
         )
 
@@ -395,8 +411,13 @@ async def unthrottle_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully removed throttle from device: {ip_address}")
+
+        # Broadcast WebSocket update
+        device_data = DeviceResponse.model_validate(device).model_dump()
+        await ws_manager.broadcast_device_update(device_data, "device_unthrottled")
+
         return success_response(
-            data=DeviceResponse.model_validate(device).model_dump(),
+            data=device_data,
             message=f"Throttle removed from device {ip_address}",
         )
 
