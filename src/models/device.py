@@ -79,6 +79,16 @@ class Device(Base):
         back_populates="device",
         cascade="all, delete-orphan",
     )
+    alert_rules = relationship(
+        "AlertRule",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
+    alerts = relationship(
+        "Alert",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
 
     # Indexes
     __table_args__ = (
