@@ -4,10 +4,10 @@ Alert management API routes.
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.dependencies.database import get_db
+from src.core.database import get_db
 from src.models.alert import AlertSeverity, AlertStatus
 from src.repositories.alert_repository import AlertRepository, AlertRuleRepository
 from src.schemas.alert import (
@@ -18,7 +18,7 @@ from src.schemas.alert import (
     AlertStatistics,
     AlertUpdateStatus,
 )
-from src.schemas.response import StandardResponse
+from src.schemas.response import APIResponse
 from src.services.alert_service import AlertService
 from src.utils.logger import get_logger
 
@@ -32,18 +32,18 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 @router.post(
     "/rules",
-    response_model=StandardResponse[AlertRuleResponse],
+    response_model=APIResponse[AlertRuleResponse],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_alert_rule(
-    rule_data: AlertRuleCreate, db: AsyncSession = get_db
-) -> StandardResponse[AlertRuleResponse]:
+    rule_data: AlertRuleCreate, db: AsyncSession = Depends(get_db)
+) -> APIResponse[AlertRuleResponse]:
     """Create a new alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
         rule = await rule_repo.create(rule_data.model_dump())
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message="Alert rule created successfully",
             data=AlertRuleResponse.model_validate(rule),
@@ -57,14 +57,14 @@ async def create_alert_rule(
         ) from e
 
 
-@router.get("/rules", response_model=StandardResponse[list[AlertRuleResponse]])
+@router.get("/rules", response_model=APIResponse[list[AlertRuleResponse]])
 async def list_alert_rules(
     skip: int = 0,
     limit: int = 100,
     enabled_only: bool = False,
     device_id: int | None = None,
-    db: AsyncSession = get_db,
-) -> StandardResponse[list[AlertRuleResponse]]:
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[list[AlertRuleResponse]]:
     """
     List alert rules.
 
@@ -84,7 +84,7 @@ async def list_alert_rules(
         else:
             rules = await rule_repo.get_all(skip=skip, limit=limit)
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message=f"Retrieved {len(rules)} alert rules",
             data=[AlertRuleResponse.model_validate(rule) for rule in rules],
@@ -98,10 +98,10 @@ async def list_alert_rules(
         ) from e
 
 
-@router.get("/rules/{rule_id}", response_model=StandardResponse[AlertRuleResponse])
+@router.get("/rules/{rule_id}", response_model=APIResponse[AlertRuleResponse])
 async def get_alert_rule(
-    rule_id: int, db: AsyncSession = get_db
-) -> StandardResponse[AlertRuleResponse]:
+    rule_id: int, db: AsyncSession = Depends(get_db)
+) -> APIResponse[AlertRuleResponse]:
     """Get a specific alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
@@ -113,7 +113,7 @@ async def get_alert_rule(
                 detail=f"Alert rule {rule_id} not found",
             )
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message="Alert rule retrieved successfully",
             data=AlertRuleResponse.model_validate(rule),
@@ -129,10 +129,10 @@ async def get_alert_rule(
         ) from e
 
 
-@router.put("/rules/{rule_id}", response_model=StandardResponse[AlertRuleResponse])
+@router.put("/rules/{rule_id}", response_model=APIResponse[AlertRuleResponse])
 async def update_alert_rule(
-    rule_id: int, rule_data: AlertRuleUpdate, db: AsyncSession = get_db
-) -> StandardResponse[AlertRuleResponse]:
+    rule_id: int, rule_data: AlertRuleUpdate, db: AsyncSession = Depends(get_db)
+) -> APIResponse[AlertRuleResponse]:
     """Update an alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
@@ -149,7 +149,7 @@ async def update_alert_rule(
         update_data = rule_data.model_dump(exclude_unset=True)
         updated_rule = await rule_repo.update(rule_id, update_data)
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message="Alert rule updated successfully",
             data=AlertRuleResponse.model_validate(updated_rule),
@@ -167,12 +167,10 @@ async def update_alert_rule(
 
 @router.delete(
     "/rules/{rule_id}",
-    response_model=StandardResponse[None],
+    response_model=APIResponse[None],
     status_code=status.HTTP_200_OK,
 )
-async def delete_alert_rule(
-    rule_id: int, db: AsyncSession = get_db
-) -> StandardResponse[None]:
+async def delete_alert_rule(rule_id: int, db: AsyncSession = Depends(get_db)) -> APIResponse[None]:
     """Delete an alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
@@ -188,9 +186,7 @@ async def delete_alert_rule(
         # Delete rule
         await rule_repo.delete(rule_id)
 
-        return StandardResponse(
-            success=True, message="Alert rule deleted successfully", data=None
-        )
+        return APIResponse(success=True, message="Alert rule deleted successfully", data=None)
 
     except HTTPException:
         raise
@@ -202,23 +198,19 @@ async def delete_alert_rule(
         ) from e
 
 
-@router.post("/rules/{rule_id}/test", response_model=StandardResponse[dict])
-async def test_alert_rule(
-    rule_id: int, db: AsyncSession = get_db
-) -> StandardResponse[dict]:
+@router.post("/rules/{rule_id}/test", response_model=APIResponse[dict])
+async def test_alert_rule(rule_id: int, db: AsyncSession = Depends(get_db)) -> APIResponse[dict]:
     """Test an alert rule without triggering actual alerts."""
     try:
         alert_service = AlertService(db)
         results = await alert_service.test_rule(rule_id)
 
-        return StandardResponse(
+        return APIResponse(
             success=True, message="Alert rule tested successfully", data=results
         )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Failed to test alert rule {rule_id}: {e}", exc_info=True)
         raise HTTPException(
@@ -230,7 +222,7 @@ async def test_alert_rule(
 # Alert Endpoints
 
 
-@router.get("/", response_model=StandardResponse[list[AlertResponse]])
+@router.get("/", response_model=APIResponse[list[AlertResponse]])
 async def list_alerts(
     skip: int = 0,
     limit: int = 100,
@@ -240,8 +232,8 @@ async def list_alerts(
     rule_id: int | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
-    db: AsyncSession = get_db,
-) -> StandardResponse[list[AlertResponse]]:
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[list[AlertResponse]]:
     """
     List alerts with optional filtering.
 
@@ -272,7 +264,7 @@ async def list_alerts(
         else:
             alerts = await alert_repo.get_all(skip=skip, limit=limit)
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message=f"Retrieved {len(alerts)} alerts",
             data=[AlertResponse.model_validate(alert) for alert in alerts],
@@ -286,16 +278,16 @@ async def list_alerts(
         ) from e
 
 
-@router.get("/active", response_model=StandardResponse[list[AlertResponse]])
+@router.get("/active", response_model=APIResponse[list[AlertResponse]])
 async def list_active_alerts(
-    skip: int = 0, limit: int = 100, db: AsyncSession = get_db
-) -> StandardResponse[list[AlertResponse]]:
+    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
+) -> APIResponse[list[AlertResponse]]:
     """List all active alerts."""
     try:
         alert_repo = AlertRepository(db)
         alerts = await alert_repo.get_active_alerts(skip, limit)
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message=f"Retrieved {len(alerts)} active alerts",
             data=[AlertResponse.model_validate(alert) for alert in alerts],
@@ -309,10 +301,10 @@ async def list_active_alerts(
         ) from e
 
 
-@router.get("/recent", response_model=StandardResponse[list[AlertResponse]])
+@router.get("/recent", response_model=APIResponse[list[AlertResponse]])
 async def list_recent_alerts(
-    hours: int = 24, limit: int = 100, db: AsyncSession = get_db
-) -> StandardResponse[list[AlertResponse]]:
+    hours: int = 24, limit: int = 100, db: AsyncSession = Depends(get_db)
+) -> APIResponse[list[AlertResponse]]:
     """
     List recent alerts.
 
@@ -324,7 +316,7 @@ async def list_recent_alerts(
         alert_repo = AlertRepository(db)
         alerts = await alert_repo.get_recent_alerts(hours, limit)
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message=f"Retrieved {len(alerts)} recent alerts",
             data=[AlertResponse.model_validate(alert) for alert in alerts],
@@ -338,10 +330,8 @@ async def list_recent_alerts(
         ) from e
 
 
-@router.get("/{alert_id}", response_model=StandardResponse[AlertResponse])
-async def get_alert(
-    alert_id: int, db: AsyncSession = get_db
-) -> StandardResponse[AlertResponse]:
+@router.get("/{alert_id}", response_model=APIResponse[AlertResponse])
+async def get_alert(alert_id: int, db: AsyncSession = Depends(get_db)) -> APIResponse[AlertResponse]:
     """Get a specific alert."""
     try:
         alert_repo = AlertRepository(db)
@@ -353,7 +343,7 @@ async def get_alert(
                 detail=f"Alert {alert_id} not found",
             )
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message="Alert retrieved successfully",
             data=AlertResponse.model_validate(alert),
@@ -369,10 +359,10 @@ async def get_alert(
         ) from e
 
 
-@router.put("/{alert_id}/status", response_model=StandardResponse[AlertResponse])
+@router.put("/{alert_id}/status", response_model=APIResponse[AlertResponse])
 async def update_alert_status(
-    alert_id: int, status_update: AlertUpdateStatus, db: AsyncSession = get_db
-) -> StandardResponse[AlertResponse]:
+    alert_id: int, status_update: AlertUpdateStatus, db: AsyncSession = Depends(get_db)
+) -> APIResponse[AlertResponse]:
     """Update alert status (acknowledge, resolve, or snooze)."""
     try:
         alert_repo = AlertRepository(db)
@@ -396,16 +386,14 @@ async def update_alert_status(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="snooze_minutes required when status is SNOOZED",
                 )
-            updated_alert = await alert_repo.snooze_alert(
-                alert_id, status_update.snooze_minutes
-            )
+            updated_alert = await alert_repo.snooze_alert(alert_id, status_update.snooze_minutes)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid status: {status_update.status}",
             )
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message=f"Alert status updated to {status_update.status.value}",
             data=AlertResponse.model_validate(updated_alert),
@@ -421,16 +409,16 @@ async def update_alert_status(
         ) from e
 
 
-@router.get("/statistics/summary", response_model=StandardResponse[AlertStatistics])
+@router.get("/statistics/summary", response_model=APIResponse[AlertStatistics])
 async def get_alert_statistics(
-    db: AsyncSession = get_db,
-) -> StandardResponse[AlertStatistics]:
+    db: AsyncSession = Depends(get_db),
+) -> APIResponse[AlertStatistics]:
     """Get alert statistics."""
     try:
         alert_repo = AlertRepository(db)
         stats = await alert_repo.get_alert_statistics()
 
-        return StandardResponse(
+        return APIResponse(
             success=True,
             message="Alert statistics retrieved successfully",
             data=AlertStatistics.model_validate(stats),
