@@ -12,7 +12,7 @@ settings = get_settings()
 async def health_check():
     """
     Health check endpoint.
-    
+
     Returns API status and version information.
     """
     return {
@@ -26,7 +26,7 @@ async def health_check():
 async def detailed_health_check():
     """
     Detailed health check endpoint.
-    
+
     Returns comprehensive health information including database, services, etc.
     """
     # TODO: Add checks for database, network monitor, bandwidth controller

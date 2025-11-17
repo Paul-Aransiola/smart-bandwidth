@@ -19,10 +19,7 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
         super().__init__(session, BandwidthUsage)
 
     async def get_by_device(
-        self,
-        device_id: int,
-        skip: int = 0,
-        limit: int = 100
+        self, device_id: int, skip: int = 0, limit: int = 100
     ) -> list[BandwidthUsage]:
         """
         Get bandwidth usage records for a device.
@@ -45,10 +42,7 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
         return list(result.scalars().all())
 
     async def get_by_time_range(
-        self,
-        device_id: int,
-        start_time: datetime,
-        end_time: datetime
+        self, device_id: int, start_time: datetime, end_time: datetime
     ) -> list[BandwidthUsage]:
         """
         Get bandwidth usage for a device within a time range.
@@ -66,17 +60,13 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
             .where(
                 BandwidthUsage.device_id == device_id,
                 BandwidthUsage.timestamp >= start_time,
-                BandwidthUsage.timestamp <= end_time
+                BandwidthUsage.timestamp <= end_time,
             )
             .order_by(BandwidthUsage.timestamp.asc())
         )
         return list(result.scalars().all())
 
-    async def get_recent_usage(
-        self,
-        device_id: int,
-        minutes: int = 60
-    ) -> list[BandwidthUsage]:
+    async def get_recent_usage(self, device_id: int, minutes: int = 60) -> list[BandwidthUsage]:
         """
         Get recent bandwidth usage for a device.
 
@@ -90,10 +80,7 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
         threshold = datetime.now() - timedelta(minutes=minutes)
         result = await self.session.execute(
             select(BandwidthUsage)
-            .where(
-                BandwidthUsage.device_id == device_id,
-                BandwidthUsage.timestamp >= threshold
-            )
+            .where(BandwidthUsage.device_id == device_id, BandwidthUsage.timestamp >= threshold)
             .order_by(BandwidthUsage.timestamp.desc())
         )
         return list(result.scalars().all())
@@ -118,8 +105,7 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
                 func.max(BandwidthUsage.download_speed_mbps).label("peak_download"),
                 func.min(BandwidthUsage.timestamp).label("first_recorded"),
                 func.max(BandwidthUsage.timestamp).label("last_recorded"),
-            )
-            .where(BandwidthUsage.device_id == device_id)
+            ).where(BandwidthUsage.device_id == device_id)
         )
         row = result.one_or_none()
 

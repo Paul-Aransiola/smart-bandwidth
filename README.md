@@ -68,6 +68,7 @@ docker-compose up --build
 ## 📚 API Documentation
 
 Once running, visit:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
@@ -123,8 +124,9 @@ MIT License - see LICENSE file for details
 ## 👥 Author
 
 **Paul Aransiola**
+
 - GitHub: [@Paul-Aransiola](https://github.com/Paul-Aransiola)
-- Email: paularansiola60@gmail.com
+- Email: <paularansiola60@gmail.com>
 
 ## 🙏 Acknowledgments
 

@@ -291,4 +291,4 @@ MIT License - See LICENSE file
 
 ## Author
 
-Paul Aransiola (paularansiola60@gmail.com)
+Paul Aransiola (<paularansiola60@gmail.com>)

@@ -1,6 +1,6 @@
 """Statistics endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
@@ -18,13 +18,13 @@ async def get_overall_statistics(
 ):
     """
     Get overall network statistics.
-    
+
     Returns aggregated statistics for all devices including total bandwidth usage,
     active devices, blocked devices, etc.
     """
     repo = DeviceRepository(db)
     stats = await repo.get_statistics()
-    
+
     return DeviceStatistics(**stats)
 
 
@@ -35,12 +35,12 @@ async def get_top_consumers(
 ):
     """
     Get top bandwidth consumers.
-    
+
     Returns list of devices consuming the most bandwidth.
     """
     repo = DeviceRepository(db)
     devices = await repo.get_top_consumers(limit=limit)
-    
+
     return [
         {
             "id": device.id,

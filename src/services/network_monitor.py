@@ -37,9 +37,7 @@ class NetworkMonitor:
         self.sniffer: AsyncSniffer | None = None
         self.is_running = False
         self.packet_count: dict[str, int] = defaultdict(int)
-        self.byte_count: dict[str, dict[str, int]] = defaultdict(
-            lambda: {"sent": 0, "received": 0}
-        )
+        self.byte_count: dict[str, dict[str, int]] = defaultdict(lambda: {"sent": 0, "received": 0})
         self.logger = logger
 
     async def start(self) -> None:
@@ -168,8 +166,7 @@ class NetworkMonitor:
             "bytes_received": self.byte_count[ip_address]["received"],
             "packet_count": self.packet_count[ip_address],
             "total_bytes": (
-                self.byte_count[ip_address]["sent"]
-                + self.byte_count[ip_address]["received"]
+                self.byte_count[ip_address]["sent"] + self.byte_count[ip_address]["received"]
             ),
         }
 
@@ -180,10 +177,7 @@ class NetworkMonitor:
         Returns:
             List of device statistics
         """
-        return [
-            self.get_device_stats(ip)
-            for ip in self.byte_count.keys()
-        ]
+        return [self.get_device_stats(ip) for ip in self.byte_count.keys()]
 
     def reset_stats(self, ip_address: str | None = None) -> None:
         """

@@ -24,7 +24,9 @@ class DeviceBase(BaseModel):
     ip_address: str = Field(..., description="Device IP address", examples=["192.168.1.100"])
     mac_address: str = Field(..., description="Device MAC address", examples=["00:11:22:33:44:55"])
     hostname: str | None = Field(None, description="Device hostname", examples=["johns-laptop"])
-    device_name: str | None = Field(None, description="Custom device name", examples=["John's Laptop"])
+    device_name: str | None = Field(
+        None, description="Custom device name", examples=["John's Laptop"]
+    )
     notes: str | None = Field(None, description="Additional notes")
 
     @field_validator("mac_address")
@@ -33,7 +35,9 @@ class DeviceBase(BaseModel):
         """Validate MAC address format."""
         v = v.upper().replace("-", ":").replace(".", ":")
         parts = v.split(":")
-        if len(parts) != 6 or not all(len(p) == 2 and all(c in "0123456789ABCDEF" for c in p) for p in parts):
+        if len(parts) != 6 or not all(
+            len(p) == 2 and all(c in "0123456789ABCDEF" for c in p) for p in parts
+        ):
             raise ValueError("Invalid MAC address format")
         return v
 

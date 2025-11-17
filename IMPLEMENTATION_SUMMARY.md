@@ -4,11 +4,12 @@
 
 **Date**: November 17, 2025  
 **Author**: Paul Aransiola  
-**Repository**: Initialized with Git (username: Paul-Aransiola, email: paularansiola60@gmail.com)
+**Repository**: Initialized with Git (username: Paul-Aransiola, email: <paularansiola60@gmail.com>)
 
 ## ✅ Completed Components
 
 ### 1. Project Infrastructure (100%)
+
 - ✅ Git repository initialized with proper `.gitignore`
 - ✅ Project structure following clean architecture principles
 - ✅ UV package manager configured with `pyproject.toml`
@@ -17,6 +18,7 @@
 - ✅ Docker Compose with API and dashboard services
 
 ### 2. Core Layer (100%)
+
 - ✅ **Configuration Management** (`src/core/config.py`)
   - Pydantic Settings for type-safe configuration
   - Environment variable validation
@@ -33,6 +35,7 @@
   - Specific exceptions for each domain concern
 
 ### 3. Data Layer (100%)
+
 - ✅ **Models** (`src/models/device.py`)
   - `Device` model with status tracking
   - `BandwidthUsage` time-series model
@@ -46,6 +49,7 @@
   - `BlockHistoryRepository` - Audit trail access
 
 ### 4. Business Logic Layer (100%)
+
 - ✅ **Network Monitor** (`src/services/network_monitor.py`)
   - Packet capture using Scapy
   - Real-time bandwidth tracking
@@ -60,6 +64,7 @@
   - System tool availability checks
 
 ### 5. API Layer (90%)
+
 - ✅ **FastAPI Application** (`src/main.py`)
   - Application lifecycle management
   - CORS middleware
@@ -77,6 +82,7 @@
 - ⏳ **Missing**: Control endpoints (`/block`, `/unblock`, `/throttle`)
 
 ### 6. Utilities (100%)
+
 - ✅ **Logging** (`src/utils/logger.py`)
   - Structured logging with rotation
   - Color-coded console output
@@ -84,6 +90,7 @@
   - Custom log adapters for context
 
 ### 7. Schemas (100%)
+
 - ✅ **Pydantic Models** (`src/schemas/device.py`)
   - Request/response validation
   - IP and MAC address validation
@@ -91,6 +98,7 @@
   - Error response models
 
 ### 8. Documentation (100%)
+
 - ✅ Main `README.md` with quick start
 - ✅ Detailed `docs/README.md` with:
   - Architecture overview
@@ -104,6 +112,7 @@
 ## 📋 Remaining Tasks
 
 ### High Priority
+
 1. **Control Endpoints** (Estimated: 2 hours)
    - Implement `/api/v1/control/block/{ip}`
    - Implement `/api/v1/control/unblock/{ip}`
@@ -129,6 +138,7 @@
    - Test error scenarios
 
 ### Medium Priority
+
 5. **Authentication & Authorization** (Estimated: 4 hours)
    - JWT token generation
    - Login endpoint
@@ -147,6 +157,7 @@
    - Responsive design
 
 ### Low Priority
+
 8. **Advanced Features**
    - Email notifications for high usage
    - Scheduled bandwidth reports
@@ -210,6 +221,7 @@ open http://localhost:8000/docs
 ## 🏗️ Architecture Highlights
 
 ### Design Patterns Used
+
 1. **Repository Pattern** - Data access abstraction
 2. **Dependency Injection** - FastAPI's built-in DI
 3. **Factory Pattern** - Service creation
@@ -217,6 +229,7 @@ open http://localhost:8000/docs
 5. **Strategy Pattern** - Bandwidth control strategies
 
 ### Best Practices Applied
+
 1. **Separation of Concerns** - Clear layer boundaries
 2. **DRY Principle** - Code reusability
 3. **Type Safety** - Comprehensive type hints
@@ -237,18 +250,21 @@ open http://localhost:8000/docs
 ## 📈 Next Steps
 
 ### Immediate (This Week)
+
 1. Implement control endpoints
 2. Create DeviceService orchestration layer
 3. Add background monitoring task
 4. Write basic unit tests
 
 ### Short Term (Next 2 Weeks)
+
 1. Complete test suite
 2. Add authentication
 3. Build simple dashboard
 4. Create deployment guide
 
 ### Long Term (Future Enhancements)
+
 1. PostgreSQL support
 2. WebSocket real-time updates
 3. Advanced analytics
@@ -288,7 +304,7 @@ open http://localhost:8000/docs
 ## 📞 Contact & Support
 
 **Author**: Paul Aransiola  
-**Email**: paularansiola60@gmail.com  
+**Email**: <paularansiola60@gmail.com>  
 **GitHub**: @Paul-Aransiola  
 **Project**: Smart Bandwidth Monitor & Control API  
 

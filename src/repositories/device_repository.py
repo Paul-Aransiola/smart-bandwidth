@@ -29,9 +29,7 @@ class DeviceRepository(BaseRepository[Device]):
         Returns:
             Device instance or None
         """
-        result = await self.session.execute(
-            select(Device).where(Device.ip_address == ip_address)
-        )
+        result = await self.session.execute(select(Device).where(Device.ip_address == ip_address))
         return result.scalar_one_or_none()
 
     async def get_by_mac(self, mac_address: str) -> Device | None:
@@ -44,12 +42,12 @@ class DeviceRepository(BaseRepository[Device]):
         Returns:
             Device instance or None
         """
-        result = await self.session.execute(
-            select(Device).where(Device.mac_address == mac_address)
-        )
+        result = await self.session.execute(select(Device).where(Device.mac_address == mac_address))
         return result.scalar_one_or_none()
 
-    async def get_by_status(self, status: DeviceStatus, skip: int = 0, limit: int = 100) -> list[Device]:
+    async def get_by_status(
+        self, status: DeviceStatus, skip: int = 0, limit: int = 100
+    ) -> list[Device]:
         """
         Get devices by status.
 
@@ -62,10 +60,7 @@ class DeviceRepository(BaseRepository[Device]):
             List of devices
         """
         result = await self.session.execute(
-            select(Device)
-            .where(Device.status == status)
-            .offset(skip)
-            .limit(limit)
+            select(Device).where(Device.status == status).offset(skip).limit(limit)
         )
         return list(result.scalars().all())
 
@@ -81,12 +76,8 @@ class DeviceRepository(BaseRepository[Device]):
         """
         threshold = datetime.now() - timedelta(minutes=minutes)
         result = await self.session.execute(
-            select(Device)
-            .where(
-                and_(
-                    Device.last_seen >= threshold,
-                    Device.status == DeviceStatus.ACTIVE
-                )
+            select(Device).where(
+                and_(Device.last_seen >= threshold, Device.status == DeviceStatus.ACTIVE)
             )
         )
         return list(result.scalars().all())
@@ -174,10 +165,7 @@ class DeviceRepository(BaseRepository[Device]):
         return await self.update(device)
 
     async def update_bandwidth_totals(
-        self,
-        device: Device,
-        bytes_sent: int,
-        bytes_received: int
+        self, device: Device, bytes_sent: int, bytes_received: int
     ) -> Device:
         """
         Update device bandwidth totals.
@@ -232,7 +220,9 @@ class BlockHistoryRepository(BaseRepository[BlockHistory]):
         """Initialize block history repository."""
         super().__init__(session, BlockHistory)
 
-    async def get_by_device(self, device_id: int, skip: int = 0, limit: int = 100) -> list[BlockHistory]:
+    async def get_by_device(
+        self, device_id: int, skip: int = 0, limit: int = 100
+    ) -> list[BlockHistory]:
         """
         Get block history for a device.
 
@@ -253,7 +243,24 @@ class BlockHistoryRepository(BaseRepository[BlockHistory]):
         )
         return list(result.scalars().all())
 
-    async def get_recent_actions(self, hours: int = 24, skip: int = 0, limit: int = 100) -> list[BlockHistory]:
+    async def get_device_history(
+        self, device_id: int, limit: int = 50
+    ) -> list[BlockHistory]:
+        """
+        Get block history for a device (alias for get_by_device).
+
+        Args:
+            device_id: Device ID
+            limit: Maximum number of records
+
+        Returns:
+            List of block history records
+        """
+        return await self.get_by_device(device_id, limit=limit)
+
+    async def get_recent_actions(
+        self, hours: int = 24, skip: int = 0, limit: int = 100
+    ) -> list[BlockHistory]:
         """
         Get recent block/unblock actions.
 

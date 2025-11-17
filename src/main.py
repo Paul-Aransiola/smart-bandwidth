@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.api.routes import devices, health, stats
+from src.api.routes import control, devices, health, stats
 from src.core.config import get_settings
 from src.core.database import close_db, init_db
 from src.core.exceptions import BandwidthMonitorException
@@ -106,6 +106,7 @@ async def bandwidth_monitor_exception_handler(request, exc: BandwidthMonitorExce
 app.include_router(health.router, prefix=settings.api_prefix, tags=["Health"])
 app.include_router(devices.router, prefix=settings.api_prefix, tags=["Devices"])
 app.include_router(stats.router, prefix=settings.api_prefix, tags=["Statistics"])
+app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
 
 
 @app.get("/", tags=["Root"])

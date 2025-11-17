@@ -20,7 +20,9 @@ class Settings(BaseSettings):
     )
 
     # Environment
-    env: str = Field(default="development", description="Environment: development, staging, production")
+    env: str = Field(
+        default="development", description="Environment: development, staging, production"
+    )
 
     # API Configuration
     api_host: str = Field(default="0.0.0.0", description="API host address")
@@ -32,19 +34,16 @@ class Settings(BaseSettings):
 
     # Database Configuration
     database_url: str = Field(
-        default="sqlite+aiosqlite:///./bandwidth_monitor.db",
-        description="Database connection URL"
+        default="sqlite+aiosqlite:///./bandwidth_monitor.db", description="Database connection URL"
     )
 
     # Security
     secret_key: str = Field(
-        default="change-this-secret-key-in-production",
-        description="Secret key for JWT tokens"
+        default="change-this-secret-key-in-production", description="Secret key for JWT tokens"
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(
-        default=30,
-        description="Access token expiration time in minutes"
+        default=30, description="Access token expiration time in minutes"
     )
 
     # Logging
@@ -56,14 +55,8 @@ class Settings(BaseSettings):
     # Network Monitoring
     network_interface: str = Field(default="eth0", description="Network interface to monitor")
     monitor_interval: int = Field(default=5, description="Monitoring interval in seconds")
-    packet_capture_timeout: int = Field(
-        default=10,
-        description="Packet capture timeout in seconds"
-    )
-    capture_filter: str = Field(
-        default="",
-        description="BPF filter for packet capture"
-    )
+    packet_capture_timeout: int = Field(default=10, description="Packet capture timeout in seconds")
+    capture_filter: str = Field(default="", description="BPF filter for packet capture")
 
     # Bandwidth Control
     max_bandwidth_mbps: int = Field(default=100, description="Maximum bandwidth in Mbps")
@@ -74,7 +67,7 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
-        description="Allowed CORS origins"
+        description="Allowed CORS origins",
     )
 
     # Rate Limiting

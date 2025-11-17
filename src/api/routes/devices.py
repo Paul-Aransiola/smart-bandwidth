@@ -21,7 +21,7 @@ async def list_devices(
 ):
     """
     List all devices.
-    
+
     Returns paginated list of all monitored devices with their current status
     and bandwidth usage information.
     """
@@ -37,15 +37,15 @@ async def get_device(
 ):
     """
     Get device by ID.
-    
+
     Returns detailed information about a specific device.
     """
     repo = DeviceRepository(db)
     device = await repo.get_by_id(device_id)
-    
+
     if not device:
         raise HTTPException(status_code=404, detail=f"Device {device_id} not found")
-    
+
     return device
 
 
@@ -56,15 +56,15 @@ async def get_device_by_ip(
 ):
     """
     Get device by IP address.
-    
+
     Returns device information for the specified IP address.
     """
     repo = DeviceRepository(db)
     device = await repo.get_by_ip(ip_address)
-    
+
     if not device:
         raise HTTPException(status_code=404, detail=f"Device with IP {ip_address} not found")
-    
+
     return device
 
 
@@ -75,20 +75,21 @@ async def create_device(
 ):
     """
     Create a new device.
-    
+
     Manually register a device in the system.
     """
     repo = DeviceRepository(db)
-    
+
     # Check if device already exists
     existing = await repo.get_by_ip(device_data.ip_address)
     if existing:
         raise DeviceAlreadyExistsException(device_data.ip_address)
-    
+
     from src.models.device import Device
+
     device = Device(**device_data.model_dump())
     created_device = await repo.create(device)
-    
+
     logger.info(f"Created device: {created_device.ip_address}")
     return created_device
 
@@ -101,23 +102,23 @@ async def update_device(
 ):
     """
     Update device information.
-    
+
     Update device details such as hostname, device name, or notes.
     """
     repo = DeviceRepository(db)
     device = await repo.get_by_id(device_id)
-    
+
     if not device:
         raise DeviceNotFoundException(str(device_id))
-    
+
     # Update fields
     update_data = device_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(device, field, value)
-    
+
     updated_device = await repo.update(device)
     logger.info(f"Updated device: {device_id}")
-    
+
     return updated_device
 
 
@@ -128,14 +129,14 @@ async def delete_device(
 ):
     """
     Delete a device.
-    
+
     Remove a device from the system.
     """
     repo = DeviceRepository(db)
     device = await repo.get_by_id(device_id)
-    
+
     if not device:
         raise DeviceNotFoundException(str(device_id))
-    
+
     await repo.delete(device)
     logger.info(f"Deleted device: {device_id}")

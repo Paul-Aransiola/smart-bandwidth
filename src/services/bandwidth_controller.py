@@ -46,20 +46,10 @@ class BandwidthController:
             self.logger.info(f"Blocking device: {ip_address}")
 
             # Block incoming traffic from IP
-            self._run_command([
-                "iptables",
-                "-A", "INPUT",
-                "-s", ip_address,
-                "-j", "DROP"
-            ])
+            self._run_command(["iptables", "-A", "INPUT", "-s", ip_address, "-j", "DROP"])
 
             # Block outgoing traffic to IP
-            self._run_command([
-                "iptables",
-                "-A", "OUTPUT",
-                "-d", ip_address,
-                "-j", "DROP"
-            ])
+            self._run_command(["iptables", "-A", "OUTPUT", "-d", ip_address, "-j", "DROP"])
 
             self.logger.info(f"Successfully blocked device: {ip_address}")
             return True
@@ -85,20 +75,10 @@ class BandwidthController:
             self.logger.info(f"Unblocking device: {ip_address}")
 
             # Remove incoming block rule
-            self._run_command([
-                "iptables",
-                "-D", "INPUT",
-                "-s", ip_address,
-                "-j", "DROP"
-            ])
+            self._run_command(["iptables", "-D", "INPUT", "-s", ip_address, "-j", "DROP"])
 
             # Remove outgoing block rule
-            self._run_command([
-                "iptables",
-                "-D", "OUTPUT",
-                "-d", ip_address,
-                "-j", "DROP"
-            ])
+            self._run_command(["iptables", "-D", "OUTPUT", "-d", ip_address, "-j", "DROP"])
 
             self.logger.info(f"Successfully unblocked device: {ip_address}")
             return True
@@ -133,31 +113,62 @@ class BandwidthController:
 
             # This is a simplified version. In production, you'd need more complex tc rules
             # Add qdisc and class for throttling
-            self._run_command([
-                "tc", "qdisc", "add",
-                "dev", self.interface,
-                "root", "handle", "1:",
-                "htb", "default", "30"
-            ])
+            self._run_command(
+                [
+                    "tc",
+                    "qdisc",
+                    "add",
+                    "dev",
+                    self.interface,
+                    "root",
+                    "handle",
+                    "1:",
+                    "htb",
+                    "default",
+                    "30",
+                ]
+            )
 
-            self._run_command([
-                "tc", "class", "add",
-                "dev", self.interface,
-                "parent", "1:",
-                "classid", "1:1",
-                "htb", "rate", f"{limit_kbps}kbit"
-            ])
+            self._run_command(
+                [
+                    "tc",
+                    "class",
+                    "add",
+                    "dev",
+                    self.interface,
+                    "parent",
+                    "1:",
+                    "classid",
+                    "1:1",
+                    "htb",
+                    "rate",
+                    f"{limit_kbps}kbit",
+                ]
+            )
 
             # Add filter for IP
-            self._run_command([
-                "tc", "filter", "add",
-                "dev", self.interface,
-                "protocol", "ip",
-                "parent", "1:0",
-                "prio", "1",
-                "u32", "match", "ip", "dst", ip_address,
-                "flowid", "1:1"
-            ])
+            self._run_command(
+                [
+                    "tc",
+                    "filter",
+                    "add",
+                    "dev",
+                    self.interface,
+                    "protocol",
+                    "ip",
+                    "parent",
+                    "1:0",
+                    "prio",
+                    "1",
+                    "u32",
+                    "match",
+                    "ip",
+                    "dst",
+                    ip_address,
+                    "flowid",
+                    "1:1",
+                ]
+            )
 
             self.logger.info(f"Successfully throttled device: {ip_address}")
             return True
@@ -183,11 +194,7 @@ class BandwidthController:
             self.logger.info(f"Removing throttling from device: {ip_address}")
 
             # Remove tc rules (simplified - in production, track and remove specific rules)
-            self._run_command([
-                "tc", "qdisc", "del",
-                "dev", self.interface,
-                "root"
-            ])
+            self._run_command(["tc", "qdisc", "del", "dev", self.interface, "root"])
 
             self.logger.info(f"Successfully removed throttling: {ip_address}")
             return True
