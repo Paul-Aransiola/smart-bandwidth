@@ -13,6 +13,7 @@ from src.api.routes import control, devices, health, stats
 from src.core.config import get_settings
 from src.core.database import close_db, get_db, init_db
 from src.core.exceptions import BandwidthMonitorException
+from src.schemas.response import error_response, success_response
 from src.services.network_monitor import NetworkMonitor
 from src.utils.logger import get_logger, setup_logging
 
@@ -241,12 +242,15 @@ app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
 @app.get("/", tags=["Root"])
 async def root():
     """Root endpoint with API information."""
-    return {
-        "message": "Smart Bandwidth Monitor & Control API",
-        "version": settings.api_version,
-        "docs": "/docs",
-        "health": f"{settings.api_prefix}/health",
-    }
+    return success_response(
+        data={
+            "name": "Smart Bandwidth Monitor & Control API",
+            "version": settings.api_version,
+            "docs": "/docs",
+            "health": f"{settings.api_prefix}/health",
+        },
+        message="Welcome to Smart Bandwidth Monitor API",
+    )
 
 
 if __name__ == "__main__":

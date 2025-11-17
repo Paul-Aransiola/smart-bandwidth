@@ -52,8 +52,9 @@ class TestControlAPIWorkflow:
                 or response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
             )  # 500 expected since we can't actually run iptables
             if response.status_code == status.HTTP_200_OK:
-                data = response.json()
-                assert data["ip_address"] == device.ip_address
+                response_data = response.json()
+                assert response_data["success"] is True
+                assert response_data["data"]["ip_address"] == device.ip_address
 
             # Step 3: Verify device is in the system
             device_from_db = await device_repo.get_by_ip(device.ip_address)
@@ -101,8 +102,9 @@ class TestControlAPIWorkflow:
             # Check history
             history_response = await client.get(f"/api/v1/history/{device.ip_address}")
             assert history_response.status_code == status.HTTP_200_OK
-            history_data = history_response.json()
-            assert isinstance(history_data, list)
+            history_response_data = history_response.json()
+            assert history_response_data["success"] is True
+            assert isinstance(history_response_data["data"], list)
 
     async def test_device_list_after_modifications(self, db_session):
         """Test listing devices after various control operations."""
@@ -131,9 +133,11 @@ class TestControlAPIWorkflow:
             # List all devices
             response = await client.get("/api/v1/devices")
             assert response.status_code == status.HTTP_200_OK
-            devices_data = response.json()
-            assert isinstance(devices_data, list)
-            assert len(devices_data) >= 3
+            response_data = response.json()
+            assert response_data["success"] is True
+            assert isinstance(response_data["data"], list)
+            assert len(response_data["data"]) >= 3
+            assert "pagination" in response_data
 
     async def test_statistics_endpoint(self, db_session):
         """Test statistics endpoint with devices."""
@@ -158,7 +162,9 @@ class TestControlAPIWorkflow:
             # Get statistics
             response = await client.get("/api/v1/stats")
             assert response.status_code == status.HTTP_200_OK
-            stats = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            stats = response_data["data"]
             assert "total_devices" in stats
             assert "active_devices" in stats
             assert "total_bandwidth_used" in stats
@@ -170,13 +176,17 @@ class TestControlAPIWorkflow:
             # Basic health check
             response = await client.get("/api/v1/health")
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["status"] == "healthy"
 
             # Detailed health check
             detailed_response = await client.get("/api/v1/health/detailed")
             assert detailed_response.status_code == status.HTTP_200_OK
-            detailed_data = detailed_response.json()
+            detailed_response_data = detailed_response.json()
+            assert detailed_response_data["success"] is True
+            detailed_data = detailed_response_data["data"]
             assert "status" in detailed_data
             assert "services" in detailed_data
             assert "database" in detailed_data["services"]
@@ -275,7 +285,9 @@ class TestControlAPIWorkflow:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(f"/api/v1/devices/ip/{device.ip_address}")
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["ip_address"] == device.ip_address
             assert data["mac_address"] == device.mac_address
             assert data["total_bytes_sent"] == 3000000

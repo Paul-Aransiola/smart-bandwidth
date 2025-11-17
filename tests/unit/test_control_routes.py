@@ -41,7 +41,9 @@ class TestBlockDevice:
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["ip_address"] == sample_device.ip_address
             assert data["is_blocked"] is True
             assert data["status"] == "blocked"
@@ -72,7 +74,9 @@ class TestBlockDevice:
             )
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        response_data = response.json()
+        assert response_data["success"] is True
+        data = response_data["data"]
         assert data["is_blocked"] is True
 
     async def test_block_device_controller_failure(self, db_session, sample_device):
@@ -123,7 +127,9 @@ class TestUnblockDevice:
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["ip_address"] == sample_device.ip_address
             assert data["is_blocked"] is False
             assert data["status"] == "active"
@@ -147,7 +153,9 @@ class TestUnblockDevice:
             response = await client.post(f"/api/v1/unblock/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        response_data = response.json()
+        assert response_data["success"] is True
+        data = response_data["data"]
         assert data["is_blocked"] is False
 
 
@@ -177,7 +185,9 @@ class TestThrottleDevice:
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["ip_address"] == sample_device.ip_address
             assert data["is_throttled"] is True
             assert data["throttle_limit_mbps"] == 10.0
@@ -252,7 +262,9 @@ class TestUnthrottleDevice:
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
-            data = response.json()
+            response_data = response.json()
+            assert response_data["success"] is True
+            data = response_data["data"]
             assert data["ip_address"] == sample_device.ip_address
             assert data["is_throttled"] is False
             assert data["throttle_limit_mbps"] is None
@@ -277,7 +289,9 @@ class TestUnthrottleDevice:
             response = await client.post(f"/api/v1/unthrottle/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        response_data = response.json()
+        assert response_data["success"] is True
+        data = response_data["data"]
         assert data["is_throttled"] is False
 
 
@@ -311,7 +325,9 @@ class TestGetDeviceHistory:
             response = await client.get(f"/api/v1/history/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        response_data = response.json()
+        assert response_data["success"] is True
+        data = response_data["data"]
         assert isinstance(data, list)
         assert len(data) == 2
         assert data[0]["action"] in ["block", "unblock"]
@@ -343,5 +359,7 @@ class TestGetDeviceHistory:
             response = await client.get(f"/api/v1/history/{sample_device.ip_address}?limit=5")
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+        response_data = response.json()
+        assert response_data["success"] is True
+        data = response_data["data"]
         assert len(data) <= 5

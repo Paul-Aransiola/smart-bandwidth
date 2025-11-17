@@ -17,6 +17,7 @@ from src.schemas.device import (
     DeviceResponse,
     ThrottleDeviceRequest,
 )
+from src.schemas.response import success_response, error_response
 from src.services.bandwidth_controller import BandwidthController
 from src.utils.logger import get_logger
 
@@ -26,7 +27,6 @@ router = APIRouter()
 
 @router.post(
     "/block/{ip_address}",
-    response_model=DeviceResponse,
     status_code=status.HTTP_200_OK,
     summary="Block a device",
     description="Block network access for a specific device by IP address using iptables.",
@@ -40,7 +40,7 @@ async def block_device(
     ip_address: str,
     request: BlockDeviceRequest,
     db: AsyncSession = Depends(get_db),
-) -> DeviceResponse:
+):
     """
     Block a device by IP address.
 
@@ -76,13 +76,16 @@ async def block_device(
     # Check if already blocked
     if device.is_blocked:
         logger.info(f"Device {ip_address} is already blocked")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} is already blocked",
+        )
 
     # Execute blocking
     controller = BandwidthController()
     try:
-        success = await controller.block_device(ip_address)
-        if not success:
+        block_success = await controller.block_device(ip_address)
+        if not block_success:
             raise BandwidthControlException("Failed to block device")
 
         # Update device status
@@ -101,13 +104,16 @@ async def block_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully blocked device: {ip_address}")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} blocked successfully",
+        )
 
     except BandwidthControlException as e:
         logger.error(f"Failed to block device {ip_address}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to block device: {str(e)}",
+            detail=str(e),
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error blocking device {ip_address}: {e}")
@@ -119,7 +125,6 @@ async def block_device(
 
 @router.post(
     "/unblock/{ip_address}",
-    response_model=DeviceResponse,
     status_code=status.HTTP_200_OK,
     summary="Unblock a device",
     description="Restore network access for a blocked device by IP address.",
@@ -132,7 +137,7 @@ async def block_device(
 async def unblock_device(
     ip_address: str,
     db: AsyncSession = Depends(get_db),
-) -> DeviceResponse:
+):
     """
     Unblock a device by IP address.
 
@@ -167,13 +172,16 @@ async def unblock_device(
     # Check if not blocked
     if not device.is_blocked:
         logger.info(f"Device {ip_address} is not blocked")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} is not blocked",
+        )
 
     # Execute unblocking
     controller = BandwidthController()
     try:
-        success = await controller.unblock_device(ip_address)
-        if not success:
+        unblock_success = await controller.unblock_device(ip_address)
+        if not unblock_success:
             raise BandwidthControlException("Failed to unblock device")
 
         # Update device status
@@ -191,7 +199,10 @@ async def unblock_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully unblocked device: {ip_address}")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} unblocked successfully",
+        )
 
     except BandwidthControlException as e:
         logger.error(f"Failed to unblock device {ip_address}: {e}")
@@ -209,7 +220,6 @@ async def unblock_device(
 
 @router.post(
     "/throttle/{ip_address}",
-    response_model=DeviceResponse,
     status_code=status.HTTP_200_OK,
     summary="Throttle a device",
     description="Limit bandwidth for a specific device by IP address using traffic control (tc).",
@@ -223,7 +233,7 @@ async def throttle_device(
     ip_address: str,
     request: ThrottleDeviceRequest,
     db: AsyncSession = Depends(get_db),
-) -> DeviceResponse:
+):
     """
     Throttle a device by IP address.
 
@@ -289,7 +299,10 @@ async def throttle_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully throttled device: {ip_address} to {request.limit_mbps} Mbps")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} throttled to {request.limit_mbps} Mbps",
+        )
 
     except BandwidthControlException as e:
         logger.error(f"Failed to throttle device {ip_address}: {e}")
@@ -307,7 +320,6 @@ async def throttle_device(
 
 @router.post(
     "/unthrottle/{ip_address}",
-    response_model=DeviceResponse,
     status_code=status.HTTP_200_OK,
     summary="Remove throttle from device",
     description="Remove bandwidth limit from a throttled device by IP address.",
@@ -320,7 +332,7 @@ async def throttle_device(
 async def unthrottle_device(
     ip_address: str,
     db: AsyncSession = Depends(get_db),
-) -> DeviceResponse:
+):
     """
     Remove throttle from a device by IP address.
 
@@ -355,13 +367,16 @@ async def unthrottle_device(
     # Check if not throttled
     if not device.is_throttled:
         logger.info(f"Device {ip_address} is not throttled")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Device {ip_address} is not throttled",
+        )
 
     # Execute unthrottling
     controller = BandwidthController()
     try:
-        success = await controller.unthrottle_device(ip_address)
-        if not success:
+        unthrottle_success = await controller.unthrottle_device(ip_address)
+        if not unthrottle_success:
             raise BandwidthControlException("Failed to remove throttle from device")
 
         # Update device status
@@ -380,7 +395,10 @@ async def unthrottle_device(
         await history_repo.create(history)
 
         logger.info(f"Successfully removed throttle from device: {ip_address}")
-        return DeviceResponse.model_validate(device)
+        return success_response(
+            data=DeviceResponse.model_validate(device).model_dump(),
+            message=f"Throttle removed from device {ip_address}",
+        )
 
     except BandwidthControlException as e:
         logger.error(f"Failed to unthrottle device {ip_address}: {e}")
@@ -398,7 +416,6 @@ async def unthrottle_device(
 
 @router.get(
     "/history/{ip_address}",
-    response_model=list[BlockHistoryResponse],
     status_code=status.HTTP_200_OK,
     summary="Get device control history",
     description="Retrieve the history of control actions for a specific device.",
@@ -411,7 +428,7 @@ async def get_device_history(
     ip_address: str,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
-) -> list[BlockHistoryResponse]:
+):
     """
     Get control history for a device.
 
@@ -448,4 +465,7 @@ async def get_device_history(
     history = await history_repo.get_device_history(device.id, limit=limit)
     logger.info(f"Retrieved {len(history)} history records for device: {ip_address}")
 
-    return [BlockHistoryResponse.model_validate(h) for h in history]
+    return success_response(
+        data=[BlockHistoryResponse.model_validate(h).model_dump() for h in history],
+        message=f"Retrieved {len(history)} history records for device {ip_address}",
+    )

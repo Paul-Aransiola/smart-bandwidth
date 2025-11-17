@@ -7,13 +7,14 @@ from src.core.database import get_db
 from src.core.exceptions import DeviceAlreadyExistsException, DeviceNotFoundException
 from src.repositories.device_repository import DeviceRepository
 from src.schemas.device import DeviceCreate, DeviceResponse, DeviceUpdate
+from src.schemas.response import paginated_response, success_response
 from src.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
 
 
-@router.get("/devices", response_model=list[DeviceResponse])
+@router.get("/devices")
 async def list_devices(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records"),
@@ -27,10 +28,21 @@ async def list_devices(
     """
     repo = DeviceRepository(db)
     devices = await repo.get_all(skip=skip, limit=limit)
-    return devices
+
+    # Get total count (in real app, would be a separate query)
+    # For now, assume total equals returned count if less than limit
+    total = len(devices) if len(devices) < limit else skip + len(devices) + 1
+
+    return paginated_response(
+        data=[DeviceResponse.model_validate(d).model_dump() for d in devices],
+        total=total,
+        skip=skip,
+        limit=limit,
+        message=f"Retrieved {len(devices)} devices",
+    )
 
 
-@router.get("/devices/{device_id}", response_model=DeviceResponse)
+@router.get("/devices/{device_id}")
 async def get_device(
     device_id: int,
     db: AsyncSession = Depends(get_db),
@@ -46,10 +58,13 @@ async def get_device(
     if not device:
         raise HTTPException(status_code=404, detail=f"Device {device_id} not found")
 
-    return device
+    return success_response(
+        data=DeviceResponse.model_validate(device).model_dump(),
+        message=f"Device {device_id} retrieved successfully",
+    )
 
 
-@router.get("/devices/ip/{ip_address}", response_model=DeviceResponse)
+@router.get("/devices/ip/{ip_address}")
 async def get_device_by_ip(
     ip_address: str,
     db: AsyncSession = Depends(get_db),
@@ -65,10 +80,13 @@ async def get_device_by_ip(
     if not device:
         raise HTTPException(status_code=404, detail=f"Device with IP {ip_address} not found")
 
-    return device
+    return success_response(
+        data=DeviceResponse.model_validate(device).model_dump(),
+        message=f"Device {ip_address} retrieved successfully",
+    )
 
 
-@router.post("/devices", response_model=DeviceResponse, status_code=201)
+@router.post("/devices", status_code=201)
 async def create_device(
     device_data: DeviceCreate,
     db: AsyncSession = Depends(get_db),
@@ -91,10 +109,13 @@ async def create_device(
     created_device = await repo.create(device)
 
     logger.info(f"Created device: {created_device.ip_address}")
-    return created_device
+    return success_response(
+        data=DeviceResponse.model_validate(created_device).model_dump(),
+        message=f"Device {created_device.ip_address} created successfully",
+    )
 
 
-@router.patch("/devices/{device_id}", response_model=DeviceResponse)
+@router.patch("/devices/{device_id}")
 async def update_device(
     device_id: int,
     device_data: DeviceUpdate,
@@ -119,10 +140,13 @@ async def update_device(
     updated_device = await repo.update(device)
     logger.info(f"Updated device: {device_id}")
 
-    return updated_device
+    return success_response(
+        data=DeviceResponse.model_validate(updated_device).model_dump(),
+        message=f"Device {device_id} updated successfully",
+    )
 
 
-@router.delete("/devices/{device_id}", status_code=204)
+@router.delete("/devices/{device_id}", status_code=200)
 async def delete_device(
     device_id: int,
     db: AsyncSession = Depends(get_db),
@@ -140,3 +164,8 @@ async def delete_device(
 
     await repo.delete(device)
     logger.info(f"Deleted device: {device_id}")
+
+    return success_response(
+        data=None,
+        message=f"Device {device_id} deleted successfully",
+    )

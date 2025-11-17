@@ -6,13 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.repositories.device_repository import DeviceRepository
 from src.schemas.device import DeviceStatistics
+from src.schemas.response import success_response
 from src.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
 
 
-@router.get("/stats", response_model=DeviceStatistics)
+@router.get("/stats")
 async def get_overall_statistics(
     db: AsyncSession = Depends(get_db),
 ):
@@ -25,7 +26,10 @@ async def get_overall_statistics(
     repo = DeviceRepository(db)
     stats = await repo.get_statistics()
 
-    return DeviceStatistics(**stats)
+    return success_response(
+        data=DeviceStatistics(**stats).model_dump(),
+        message="Overall statistics retrieved successfully",
+    )
 
 
 @router.get("/stats/top-consumers")
@@ -41,7 +45,7 @@ async def get_top_consumers(
     repo = DeviceRepository(db)
     devices = await repo.get_top_consumers(limit=limit)
 
-    return [
+    data = [
         {
             "id": device.id,
             "ip_address": device.ip_address,
@@ -53,3 +57,8 @@ async def get_top_consumers(
         }
         for device in devices
     ]
+
+    return success_response(
+        data=data,
+        message=f"Top {len(data)} bandwidth consumers retrieved successfully",
+    )
