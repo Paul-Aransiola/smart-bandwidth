@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.api.routes import control, devices, health, reports, stats, websocket
+from src.api.routes import alerts, control, devices, health, reports, stats, websocket
 from src.core.config import get_settings
 from src.core.database import close_db, get_db, init_db
 from src.core.exceptions import BandwidthMonitorException
@@ -99,8 +99,13 @@ async def periodic_bandwidth_save():
     from src.models.device import BandwidthUsage, Device
     from src.repositories.bandwidth_repository import BandwidthUsageRepository
     from src.repositories.device_repository import DeviceRepository
+    from src.services.alert_service import AlertService
+    from src.services.notification_handlers import NotificationManager
 
     logger.info("Starting periodic bandwidth save task")
+
+    # Initialize notification manager with WebSocket support
+    notification_manager = NotificationManager(websocket_manager=ws_manager)
 
     while True:
         try:
@@ -176,6 +181,22 @@ async def periodic_bandwidth_save():
                     }
                 )
 
+            # Evaluate alert rules after saving bandwidth data
+            try:
+                async with AsyncSessionLocal() as alert_session:
+                    alert_service = AlertService(
+                        alert_session, notification_manager=notification_manager
+                    )
+                    results = await alert_service.evaluate_all_rules()
+                    if results["alerts_triggered"] > 0:
+                        logger.info(
+                            f"Alert evaluation: {results['rules_checked']} rules checked, "
+                            f"{results['alerts_triggered']} alerts triggered"
+                        )
+                    await alert_session.commit()
+            except Exception as alert_error:
+                logger.error(f"Error evaluating alert rules: {alert_error}", exc_info=True)
+
         except asyncio.CancelledError:
             logger.info("Bandwidth save task cancelled")
             break
@@ -247,6 +268,7 @@ app.include_router(health.router, prefix=settings.api_prefix, tags=["Health"])
 app.include_router(devices.router, prefix=settings.api_prefix, tags=["Devices"])
 app.include_router(stats.router, prefix=settings.api_prefix, tags=["Statistics"])
 app.include_router(reports.router, prefix=settings.api_prefix, tags=["Reports"])
+app.include_router(alerts.router, prefix=settings.api_prefix, tags=["Alerts"])
 app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
