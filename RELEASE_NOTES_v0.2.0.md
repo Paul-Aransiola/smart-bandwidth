@@ -19,39 +19,48 @@ This release introduces comprehensive device control capabilities with full test
 ### 1. Device Control Endpoints
 
 #### Block Device
+
 - **Endpoint:** `POST /api/v1/block/{ip_address}`
 - **Functionality:** Blocks all network traffic from a device using iptables DROP rules
 - **Request Body:**
+
   ```json
   {
     "reason": "Security threat detected"
   }
   ```
+
 - **Response:** Updated device object with `is_blocked=true`
 
 #### Unblock Device
+
 - **Endpoint:** `POST /api/v1/unblock/{ip_address}`
 - **Functionality:** Removes iptables rules and restores network access
 - **Response:** Updated device object with `is_blocked=false`
 
 #### Throttle Device
+
 - **Endpoint:** `POST /api/v1/throttle/{ip_address}`
 - **Functionality:** Limits bandwidth using tc (traffic control)
 - **Request Body:**
+
   ```json
   {
     "limit_mbps": 5.0,
     "reason": "High bandwidth usage"
   }
   ```
+
 - **Response:** Updated device object with throttle settings
 
 #### Unthrottle Device
+
 - **Endpoint:** `POST /api/v1/unthrottle/{ip_address}`
 - **Functionality:** Removes bandwidth limits
 - **Response:** Updated device object with throttling removed
 
 #### Device History
+
 - **Endpoint:** `GET /api/v1/history/{ip_address}?limit=50`
 - **Functionality:** Retrieves control action history
 - **Response:** Array of historical control actions
@@ -76,6 +85,7 @@ This release introduces comprehensive device control capabilities with full test
 ### Test Coverage: 54%
 
 ### Unit Tests (17 tests)
+
 - **Location:** `tests/unit/test_control_routes.py`
 - **Approach:** Mocked BandwidthController to avoid system calls
 - **Coverage:**
@@ -86,6 +96,7 @@ This release introduces comprehensive device control capabilities with full test
   - Device history: 3 tests (success, not found, with limit)
 
 ### Integration Tests (9 tests)
+
 - **Location:** `tests/integration/test_control_api.py`
 - **Approach:** Full E2E workflows with in-memory SQLite
 - **Coverage:**
@@ -99,6 +110,7 @@ This release introduces comprehensive device control capabilities with full test
   - Get device by IP
 
 ### E2E Manual Test Script
+
 - **Location:** `tests/e2e_test.sh`
 - **Purpose:** Manual API validation with curl commands
 - **Requirements:** jq, running server
@@ -110,7 +122,8 @@ This release introduces comprehensive device control capabilities with full test
 
 **24 files changed, 3,287 insertions(+), 154 deletions(-)**
 
-### New Files:
+### New Files
+
 - `src/api/routes/control.py` (451 lines)
 - `tests/unit/conftest.py` (74 lines)
 - `tests/unit/test_control_routes.py` (347 lines)
@@ -120,7 +133,8 @@ This release introduces comprehensive device control capabilities with full test
 - `QUICK_REFERENCE.md` (313 lines)
 - `uv.lock` (dependency lock file)
 
-### Modified Files:
+### Modified Files
+
 - Enhanced `src/services/bandwidth_controller.py`
 - Updated `src/repositories/device_repository.py`
 - Modified `src/core/config.py` (added ENABLE_THROTTLING)
@@ -130,7 +144,8 @@ This release introduces comprehensive device control capabilities with full test
 
 ## 🔧 Technical Details
 
-### Dependencies Added:
+### Dependencies Added
+
 - pytest 9.0.1
 - pytest-asyncio 1.3.0
 - pytest-cov 7.0.0
@@ -140,13 +155,15 @@ This release introduces comprehensive device control capabilities with full test
 - ruff 0.9.2
 - mypy 1.15.0
 
-### System Requirements:
+### System Requirements
+
 - iptables (for blocking)
 - tc (traffic control, for throttling)
 - sudo privileges (for network operations)
 - macOS or Linux
 
-### Configuration:
+### Configuration
+
 - `ENABLE_THROTTLING=true` in `.env`
 - `NETWORK_INTERFACE=en0` (configurable per system)
 
@@ -154,21 +171,24 @@ This release introduces comprehensive device control capabilities with full test
 
 ## 🚀 Usage Examples
 
-### Block a device:
+### Block a device
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/block/192.168.1.100 \
   -H "Content-Type: application/json" \
   -d '{"reason": "Security threat"}'
 ```
 
-### Throttle a device:
+### Throttle a device
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/throttle/192.168.1.100 \
   -H "Content-Type: application/json" \
   -d '{"limit_mbps": 5.0, "reason": "High bandwidth usage"}'
 ```
 
-### View history:
+### View history
+
 ```bash
 curl http://localhost:8000/api/v1/history/192.168.1.100?limit=10
 ```
