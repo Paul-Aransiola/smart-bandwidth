@@ -243,9 +243,7 @@ class BlockHistoryRepository(BaseRepository[BlockHistory]):
         )
         return list(result.scalars().all())
 
-    async def get_device_history(
-        self, device_id: int, limit: int = 50
-    ) -> list[BlockHistory]:
+    async def get_device_history(self, device_id: int, limit: int = 50) -> list[BlockHistory]:
         """
         Get block history for a device (alias for get_by_device).
 

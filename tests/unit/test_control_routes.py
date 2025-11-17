@@ -31,7 +31,9 @@ class TestBlockDevice:
             mock_controller_class.return_value = mock_controller
 
             # Make request
-            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
                 response = await client.post(
                     f"/api/v1/block/{sample_device.ip_address}",
                     json={"reason": "Test blocking"},
@@ -49,12 +51,8 @@ class TestBlockDevice:
 
     async def test_block_device_not_found(self, db_session):
         """Test blocking a non-existent device."""
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
-            response = await client.post(
-                "/api/v1/block/192.168.1.999", json={"reason": "Test"}
-            )
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post("/api/v1/block/192.168.1.999", json={"reason": "Test"})
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
@@ -67,9 +65,7 @@ class TestBlockDevice:
         device_repo = DeviceRepository(db_session)
         await device_repo.create(sample_device)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/api/v1/block/{sample_device.ip_address}",
                 json={"reason": "Test blocking"},
@@ -86,9 +82,7 @@ class TestBlockDevice:
         await device_repo.create(sample_device)
 
         # Mock controller to raise exception
-        with patch(
-            "src.api.routes.control.BandwidthController"
-        ) as mock_controller_class:
+        with patch("src.api.routes.control.BandwidthController") as mock_controller_class:
             mock_controller = Mock()
             mock_controller.block_device = AsyncMock(return_value=False)
             mock_controller_class.return_value = mock_controller
@@ -117,9 +111,7 @@ class TestUnblockDevice:
         await device_repo.create(sample_device)
 
         # Mock dependencies
-        with patch(
-            "src.api.routes.control.BandwidthController"
-        ) as mock_controller_class:
+        with patch("src.api.routes.control.BandwidthController") as mock_controller_class:
             mock_controller = Mock()
             mock_controller.unblock_device = AsyncMock(return_value=True)
             mock_controller_class.return_value = mock_controller
@@ -136,15 +128,11 @@ class TestUnblockDevice:
             assert data["is_blocked"] is False
             assert data["status"] == "active"
 
-            mock_controller.unblock_device.assert_called_once_with(
-                sample_device.ip_address
-            )
+            mock_controller.unblock_device.assert_called_once_with(sample_device.ip_address)
 
     async def test_unblock_device_not_found(self, db_session):
         """Test unblocking a non-existent device."""
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/unblock/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -155,9 +143,7 @@ class TestUnblockDevice:
         device_repo = DeviceRepository(db_session)
         await device_repo.create(sample_device)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(f"/api/v1/unblock/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -176,9 +162,7 @@ class TestThrottleDevice:
         await device_repo.create(sample_device)
 
         # Mock dependencies
-        with patch(
-            "src.api.routes.control.BandwidthController"
-        ) as mock_controller_class:
+        with patch("src.api.routes.control.BandwidthController") as mock_controller_class:
             mock_controller = Mock()
             mock_controller.throttle_device = AsyncMock(return_value=True)
             mock_controller_class.return_value = mock_controller
@@ -199,15 +183,11 @@ class TestThrottleDevice:
             assert data["throttle_limit_mbps"] == 10.0
             assert data["status"] == "throttled"
 
-            mock_controller.throttle_device.assert_called_once_with(
-                sample_device.ip_address, 10.0
-            )
+            mock_controller.throttle_device.assert_called_once_with(sample_device.ip_address, 10.0)
 
     async def test_throttle_device_not_found(self, db_session):
         """Test throttling a non-existent device."""
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 "/api/v1/throttle/192.168.1.999",
                 json={"limit_mbps": 10.0, "reason": "Test"},
@@ -223,9 +203,7 @@ class TestThrottleDevice:
         device_repo = DeviceRepository(db_session)
         await device_repo.create(sample_device)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/api/v1/throttle/{sample_device.ip_address}",
                 json={"limit_mbps": 10.0, "reason": "Test"},
@@ -239,9 +217,7 @@ class TestThrottleDevice:
         device_repo = DeviceRepository(db_session)
         await device_repo.create(sample_device)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
                 f"/api/v1/throttle/{sample_device.ip_address}",
                 json={"limit_mbps": -5.0, "reason": "Test"},
@@ -264,9 +240,7 @@ class TestUnthrottleDevice:
         await device_repo.create(sample_device)
 
         # Mock dependencies
-        with patch(
-            "src.api.routes.control.BandwidthController"
-        ) as mock_controller_class:
+        with patch("src.api.routes.control.BandwidthController") as mock_controller_class:
             mock_controller = Mock()
             mock_controller.unthrottle_device = AsyncMock(return_value=True)
             mock_controller_class.return_value = mock_controller
@@ -284,15 +258,11 @@ class TestUnthrottleDevice:
             assert data["throttle_limit_mbps"] is None
             assert data["status"] == "active"
 
-            mock_controller.unthrottle_device.assert_called_once_with(
-                sample_device.ip_address
-            )
+            mock_controller.unthrottle_device.assert_called_once_with(sample_device.ip_address)
 
     async def test_unthrottle_device_not_found(self, db_session):
         """Test unthrottling a non-existent device."""
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/unthrottle/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -303,9 +273,7 @@ class TestUnthrottleDevice:
         device_repo = DeviceRepository(db_session)
         await device_repo.create(sample_device)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(f"/api/v1/unthrottle/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -339,9 +307,7 @@ class TestGetDeviceHistory:
         await history_repo.create(history1)
         await history_repo.create(history2)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get(f"/api/v1/history/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -352,9 +318,7 @@ class TestGetDeviceHistory:
 
     async def test_get_device_history_not_found(self, db_session):
         """Test history retrieval for non-existent device."""
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.get("/api/v1/history/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -375,12 +339,8 @@ class TestGetDeviceHistory:
             )
             await history_repo.create(history)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
-        ) as client:
-            response = await client.get(
-                f"/api/v1/history/{sample_device.ip_address}?limit=5"
-            )
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.get(f"/api/v1/history/{sample_device.ip_address}?limit=5")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()

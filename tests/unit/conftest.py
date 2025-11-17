@@ -33,9 +33,9 @@ async def db_session():
             yield session
 
         app.dependency_overrides[get_db] = override_get_db
-        
+
         yield session
-        
+
         # Cleanup
         app.dependency_overrides.clear()
 
