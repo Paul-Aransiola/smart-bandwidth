@@ -264,19 +264,23 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
         Returns:
             List of dictionaries with device usage statistics
         """
-        query = select(
-            BandwidthUsage.device_id,
-            func.sum(BandwidthUsage.bytes_sent).label("total_sent"),
-            func.sum(BandwidthUsage.bytes_received).label("total_received"),
-            (
-                func.sum(BandwidthUsage.bytes_sent) + func.sum(BandwidthUsage.bytes_received)
-            ).label("total_bytes"),
-            func.avg(BandwidthUsage.upload_speed_mbps).label("avg_upload_speed"),
-            func.avg(BandwidthUsage.download_speed_mbps).label("avg_download_speed"),
-        ).where(
-            BandwidthUsage.timestamp >= start_date,
-            BandwidthUsage.timestamp <= end_date,
-        ).group_by(BandwidthUsage.device_id)
+        query = (
+            select(
+                BandwidthUsage.device_id,
+                func.sum(BandwidthUsage.bytes_sent).label("total_sent"),
+                func.sum(BandwidthUsage.bytes_received).label("total_received"),
+                (
+                    func.sum(BandwidthUsage.bytes_sent) + func.sum(BandwidthUsage.bytes_received)
+                ).label("total_bytes"),
+                func.avg(BandwidthUsage.upload_speed_mbps).label("avg_upload_speed"),
+                func.avg(BandwidthUsage.download_speed_mbps).label("avg_download_speed"),
+            )
+            .where(
+                BandwidthUsage.timestamp >= start_date,
+                BandwidthUsage.timestamp <= end_date,
+            )
+            .group_by(BandwidthUsage.device_id)
+        )
 
         # Order by specified metric
         if order_by == "sent":

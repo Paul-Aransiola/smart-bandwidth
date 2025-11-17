@@ -130,9 +130,7 @@ class AlertService:
 
         return triggered
 
-    async def _check_device_against_rule(
-        self, device: Device, rule: AlertRule
-    ) -> bool:
+    async def _check_device_against_rule(self, device: Device, rule: AlertRule) -> bool:
         """
         Check if a device triggers an alert rule.
 
@@ -144,20 +142,14 @@ class AlertService:
             True if alert was triggered, False otherwise
         """
         # Get metric value
-        metric_value = await self._get_metric_value(
-            device, rule.metric, rule.time_window_minutes
-        )
+        metric_value = await self._get_metric_value(device, rule.metric, rule.time_window_minutes)
 
         if metric_value is None:
-            logger.debug(
-                f"No metric value for device {device.id}, metric {rule.metric}"
-            )
+            logger.debug(f"No metric value for device {device.id}, metric {rule.metric}")
             return False
 
         # Check threshold condition
-        threshold_met = self._check_threshold(
-            metric_value, rule.condition, rule.threshold_value
-        )
+        threshold_met = self._check_threshold(metric_value, rule.condition, rule.threshold_value)
 
         if not threshold_met:
             return False
@@ -195,25 +187,19 @@ class AlertService:
 
         if metric == AlertMetric.BANDWIDTH_USAGE:
             # Get average bandwidth usage in time window (Mbps)
-            usage_records = await self.bandwidth_repo.get_by_time_range(
-                device.id, start_time, now
-            )
+            usage_records = await self.bandwidth_repo.get_by_time_range(device.id, start_time, now)
             if not usage_records:
                 return None
 
             # Calculate average bandwidth (convert bytes to Mbps)
-            total_bytes = sum(
-                r.bytes_received + r.bytes_transmitted for r in usage_records
-            )
+            total_bytes = sum(r.bytes_received + r.bytes_transmitted for r in usage_records)
             time_span_seconds = time_window_minutes * 60
             mbps = (total_bytes * 8) / (time_span_seconds * 1_000_000)
             return round(mbps, 2)
 
         elif metric == AlertMetric.UPLOAD_SPEED:
             # Get average upload speed in time window (Mbps)
-            usage_records = await self.bandwidth_repo.get_by_time_range(
-                device.id, start_time, now
-            )
+            usage_records = await self.bandwidth_repo.get_by_time_range(device.id, start_time, now)
             if not usage_records:
                 return None
 
@@ -224,9 +210,7 @@ class AlertService:
 
         elif metric == AlertMetric.DOWNLOAD_SPEED:
             # Get average download speed in time window (Mbps)
-            usage_records = await self.bandwidth_repo.get_by_time_range(
-                device.id, start_time, now
-            )
+            usage_records = await self.bandwidth_repo.get_by_time_range(device.id, start_time, now)
             if not usage_records:
                 return None
 
@@ -237,15 +221,11 @@ class AlertService:
 
         elif metric == AlertMetric.TOTAL_BYTES:
             # Get total bytes in time window
-            usage_records = await self.bandwidth_repo.get_by_time_range(
-                device.id, start_time, now
-            )
+            usage_records = await self.bandwidth_repo.get_by_time_range(device.id, start_time, now)
             if not usage_records:
                 return None
 
-            total_bytes = sum(
-                r.bytes_received + r.bytes_transmitted for r in usage_records
-            )
+            total_bytes = sum(r.bytes_received + r.bytes_transmitted for r in usage_records)
             return float(total_bytes)
 
         elif metric == AlertMetric.DEVICE_COUNT:
@@ -279,9 +259,7 @@ class AlertService:
             return abs(metric_value - threshold) >= 0.01
         return False
 
-    async def _create_alert(
-        self, device: Device, rule: AlertRule, metric_value: float
-    ) -> Alert:
+    async def _create_alert(self, device: Device, rule: AlertRule, metric_value: float) -> Alert:
         """
         Create a new alert.
 
@@ -317,9 +295,7 @@ class AlertService:
 
         return alert
 
-    def _generate_alert_message(
-        self, device: Device, rule: AlertRule, metric_value: float
-    ) -> str:
+    def _generate_alert_message(self, device: Device, rule: AlertRule, metric_value: float) -> str:
         """
         Generate human-readable alert message.
 

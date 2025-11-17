@@ -272,9 +272,7 @@ class ReportingService:
             filename_base = "trends_report"
         else:  # top_consumers
             limit = request.limit or 10
-            consumers = await self.get_top_consumers(
-                request.start_date, request.end_date, limit
-            )
+            consumers = await self.get_top_consumers(request.start_date, request.end_date, limit)
             data = [c.model_dump() for c in consumers]
             filename_base = "top_consumers_report"
 
@@ -303,9 +301,7 @@ class ReportingService:
             download_url=f"/api/v1/reports/download/{filename}",
         )
 
-    def _export_to_csv(
-        self, data: dict | list, report_type: str
-    ) -> tuple[str, int]:
+    def _export_to_csv(self, data: dict | list, report_type: str) -> tuple[str, int]:
         """Export data to CSV format."""
         output = StringIO()
         writer = csv.writer(output)
@@ -366,9 +362,7 @@ class ReportingService:
 
             return output.getvalue(), len(top_consumers)
 
-    def _export_to_json(
-        self, data: dict | list, report_type: str
-    ) -> tuple[str, int]:
+    def _export_to_json(self, data: dict | list, report_type: str) -> tuple[str, int]:
         """Export data to JSON format."""
         # Convert datetime objects to ISO format strings
         json_str = json.dumps(data, indent=2, default=str)

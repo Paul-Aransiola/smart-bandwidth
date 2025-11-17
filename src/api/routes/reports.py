@@ -37,12 +37,8 @@ router = APIRouter(prefix="/reports")
     },
 )
 async def get_usage_report(
-    start_date: datetime = Query(
-        ..., description="Start date for report (ISO 8601 format)"
-    ),
-    end_date: datetime = Query(
-        ..., description="End date for report (ISO 8601 format)"
-    ),
+    start_date: datetime = Query(..., description="Start date for report (ISO 8601 format)"),
+    end_date: datetime = Query(..., description="End date for report (ISO 8601 format)"),
     device_id: int | None = Query(
         None, description="Optional device ID for device-specific report"
     ),
@@ -94,18 +90,10 @@ async def get_usage_report(
     },
 )
 async def get_bandwidth_trends(
-    start_date: datetime = Query(
-        ..., description="Start date for trends (ISO 8601 format)"
-    ),
-    end_date: datetime = Query(
-        ..., description="End date for trends (ISO 8601 format)"
-    ),
-    interval: Literal["hour", "day", "week"] = Query(
-        "day", description="Aggregation interval"
-    ),
-    device_id: int | None = Query(
-        None, description="Optional device ID to filter by"
-    ),
+    start_date: datetime = Query(..., description="Start date for trends (ISO 8601 format)"),
+    end_date: datetime = Query(..., description="End date for trends (ISO 8601 format)"),
+    interval: Literal["hour", "day", "week"] = Query("day", description="Aggregation interval"),
+    device_id: int | None = Query(None, description="Optional device ID to filter by"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -148,12 +136,8 @@ async def get_bandwidth_trends(
     },
 )
 async def get_top_consumers(
-    start_date: datetime = Query(
-        ..., description="Start date for analysis (ISO 8601 format)"
-    ),
-    end_date: datetime = Query(
-        ..., description="End date for analysis (ISO 8601 format)"
-    ),
+    start_date: datetime = Query(..., description="Start date for analysis (ISO 8601 format)"),
+    end_date: datetime = Query(..., description="End date for analysis (ISO 8601 format)"),
     limit: int = Query(10, ge=1, le=100, description="Number of top consumers to return"),
     order_by: Literal["sent", "received", "total"] = Query(
         "total", description="Order by sent, received, or total bytes"
@@ -174,9 +158,7 @@ async def get_top_consumers(
             )
 
         reporting_service = ReportingService(db)
-        consumers = await reporting_service.get_top_consumers(
-            start_date, end_date, limit, order_by
-        )
+        consumers = await reporting_service.get_top_consumers(start_date, end_date, limit, order_by)
 
         return success_response(
             data=[c.model_dump() for c in consumers],
@@ -272,9 +254,7 @@ async def download_report(filename: str) -> FileResponse:
     },
 )
 async def get_quick_stats(
-    period: Literal["24h", "7d", "30d"] = Query(
-        "24h", description="Time period for statistics"
-    ),
+    period: Literal["24h", "7d", "30d"] = Query("24h", description="Time period for statistics"),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """

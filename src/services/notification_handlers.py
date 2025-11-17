@@ -132,12 +132,13 @@ class EmailNotificationHandler(NotificationHandler):
             # TODO: Implement actual email sending with aiosmtplib
             # For now, just log what would be sent
             logger.info(
-                f"Email notification for alert {alert.id}: "
-                f"to={email_addresses}, subject={subject}"
+                f"Email notification for alert {alert.id}: to={email_addresses}, subject={subject}"
             )
 
             # Placeholder implementation
-            logger.warning("Email sending not yet implemented - would send to: " + ", ".join(email_addresses))
+            logger.warning(
+                "Email sending not yet implemented - would send to: " + ", ".join(email_addresses)
+            )
 
             return NotificationResult(
                 success=False,
@@ -331,9 +332,7 @@ class WebhookNotificationHandler(NotificationHandler):
 
             except TimeoutError:
                 last_error = "Request timeout"
-                logger.warning(
-                    f"Webhook to {url} timed out (attempt {attempt}/{self.max_retries})"
-                )
+                logger.warning(f"Webhook to {url} timed out (attempt {attempt}/{self.max_retries})")
 
             except Exception as e:
                 last_error = str(e)

@@ -16,7 +16,9 @@ class TimeSeriesDataPoint(BaseModel):
     total_bytes_received: int = Field(..., ge=0, description="Total bytes received in period")
     total_bytes: int = Field(..., ge=0, description="Total bytes transferred in period")
     avg_upload_speed_mbps: float = Field(..., ge=0.0, description="Average upload speed in Mbps")
-    avg_download_speed_mbps: float = Field(..., ge=0.0, description="Average download speed in Mbps")
+    avg_download_speed_mbps: float = Field(
+        ..., ge=0.0, description="Average download speed in Mbps"
+    )
     record_count: int = Field(..., ge=0, description="Number of records in period")
 
 
@@ -31,7 +33,9 @@ class BandwidthTrend(BaseModel):
     interval: Literal["hour", "day", "week"] = Field(..., description="Aggregation interval")
     data_points: list[TimeSeriesDataPoint] = Field(..., description="Time series data")
     total_bytes_sent: int = Field(..., ge=0, description="Total bytes sent in entire period")
-    total_bytes_received: int = Field(..., ge=0, description="Total bytes received in entire period")
+    total_bytes_received: int = Field(
+        ..., ge=0, description="Total bytes received in entire period"
+    )
     total_bytes: int = Field(..., ge=0, description="Total bytes transferred in entire period")
 
 
@@ -46,8 +50,12 @@ class TopConsumer(BaseModel):
     total_bytes_received: int = Field(..., ge=0, description="Total bytes received")
     total_bytes: int = Field(..., ge=0, description="Total bytes transferred")
     avg_upload_speed_mbps: float = Field(..., ge=0.0, description="Average upload speed in Mbps")
-    avg_download_speed_mbps: float = Field(..., ge=0.0, description="Average download speed in Mbps")
-    percentage_of_total: float = Field(..., ge=0.0, le=100.0, description="Percentage of total bandwidth")
+    avg_download_speed_mbps: float = Field(
+        ..., ge=0.0, description="Average download speed in Mbps"
+    )
+    percentage_of_total: float = Field(
+        ..., ge=0.0, le=100.0, description="Percentage of total bandwidth"
+    )
 
 
 class UsageReport(BaseModel):
@@ -56,18 +64,22 @@ class UsageReport(BaseModel):
     report_type: Literal["device", "network"] = Field(..., description="Type of report")
     start_date: datetime = Field(..., description="Report start date")
     end_date: datetime = Field(..., description="Report end date")
-    generated_at: datetime = Field(default_factory=datetime.now, description="Report generation time")
-    
+    generated_at: datetime = Field(
+        default_factory=datetime.now, description="Report generation time"
+    )
+
     # Network-wide statistics
     total_devices: int = Field(..., ge=0, description="Total number of devices")
     active_devices: int = Field(..., ge=0, description="Number of active devices")
     total_bytes_sent: int = Field(..., ge=0, description="Total bytes sent by all devices")
     total_bytes_received: int = Field(..., ge=0, description="Total bytes received by all devices")
     total_bytes: int = Field(..., ge=0, description="Total bytes transferred")
-    
+
     # Top consumers
-    top_consumers: list[TopConsumer] = Field(default_factory=list, description="Top bandwidth consumers")
-    
+    top_consumers: list[TopConsumer] = Field(
+        default_factory=list, description="Top bandwidth consumers"
+    )
+
     # Device-specific data (if applicable)
     device_id: int | None = Field(None, description="Device ID for device-specific report")
     device_ip: str | None = Field(None, description="Device IP address")
@@ -97,5 +109,7 @@ class ReportExportResponse(BaseModel):
     format: Literal["csv", "json"] = Field(..., description="File format")
     size_bytes: int = Field(..., ge=0, description="File size in bytes")
     record_count: int = Field(..., ge=0, description="Number of records in export")
-    generated_at: datetime = Field(default_factory=datetime.now, description="Export generation time")
+    generated_at: datetime = Field(
+        default_factory=datetime.now, description="Export generation time"
+    )
     download_url: str = Field(..., description="URL to download the export")

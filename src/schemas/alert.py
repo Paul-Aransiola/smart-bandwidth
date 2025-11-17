@@ -13,8 +13,12 @@ from src.models.alert import AlertCondition, AlertMetric, AlertSeverity, AlertSt
 class NotificationConfig(BaseModel):
     """Notification configuration."""
 
-    email_addresses: list[str] = Field(default_factory=list, description="Email addresses for notifications")
-    webhook_urls: list[str] = Field(default_factory=list, description="Webhook URLs for notifications")
+    email_addresses: list[str] = Field(
+        default_factory=list, description="Email addresses for notifications"
+    )
+    webhook_urls: list[str] = Field(
+        default_factory=list, description="Webhook URLs for notifications"
+    )
     email_template: str | None = Field(None, description="Custom email template")
 
 
@@ -29,15 +33,19 @@ class AlertRuleBase(BaseModel):
     time_window_minutes: int = Field(5, ge=1, le=1440, description="Time window in minutes")
     device_id: int | None = Field(None, description="Specific device ID (None for all devices)")
     severity: AlertSeverity = Field(AlertSeverity.WARNING, description="Alert severity")
-    notification_channels: str = Field("websocket", description="Comma-separated notification channels")
-    notification_config: NotificationConfig | None = Field(None, description="Notification configuration")
+    notification_channels: str = Field(
+        "websocket", description="Comma-separated notification channels"
+    )
+    notification_config: NotificationConfig | None = Field(
+        None, description="Notification configuration"
+    )
     cooldown_minutes: int = Field(15, ge=1, le=1440, description="Cooldown period in minutes")
     is_enabled: bool = Field(True, description="Whether the rule is enabled")
 
 
 class AlertRuleCreate(AlertRuleBase):
     """Schema for creating an alert rule."""
-    
+
     @field_validator("notification_channels")
     @classmethod
     def validate_channels(cls, v: str) -> str:
@@ -114,7 +122,9 @@ class AlertUpdateStatus(BaseModel):
     """Schema for updating alert status."""
 
     status: Literal["acknowledged", "resolved", "snoozed"] = Field(..., description="New status")
-    snooze_minutes: int | None = Field(None, ge=1, le=1440, description="Minutes to snooze (if snoozed)")
+    snooze_minutes: int | None = Field(
+        None, ge=1, le=1440, description="Minutes to snooze (if snoozed)"
+    )
 
 
 class AlertQuery(BaseModel):

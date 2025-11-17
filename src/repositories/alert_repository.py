@@ -127,9 +127,7 @@ class AlertRepository(BaseRepository[Alert]):
         )
         return list(result.scalars().all())
 
-    async def get_by_rule(
-        self, rule_id: int, skip: int = 0, limit: int = 100
-    ) -> list[Alert]:
+    async def get_by_rule(self, rule_id: int, skip: int = 0, limit: int = 100) -> list[Alert]:
         """
         Get alerts for a specific rule.
 
@@ -150,9 +148,7 @@ class AlertRepository(BaseRepository[Alert]):
         )
         return list(result.scalars().all())
 
-    async def get_by_device(
-        self, device_id: int, skip: int = 0, limit: int = 100
-    ) -> list[Alert]:
+    async def get_by_device(self, device_id: int, skip: int = 0, limit: int = 100) -> list[Alert]:
         """
         Get alerts for a specific device.
 
