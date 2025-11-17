@@ -3,6 +3,7 @@ Bandwidth usage repository for data access.
 """
 
 from datetime import datetime, timedelta
+from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -156,3 +157,150 @@ class BandwidthUsageRepository(BaseRepository[BandwidthUsage]):
 
         await self.session.flush()
         return count
+
+    async def get_usage_by_date_range(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        device_id: int | None = None,
+    ) -> list[BandwidthUsage]:
+        """
+        Get bandwidth usage for all devices or specific device within date range.
+
+        Args:
+            start_date: Start of date range
+            end_date: End of date range
+            device_id: Optional device ID to filter by
+
+        Returns:
+            List of bandwidth usage records
+        """
+        query = select(BandwidthUsage).where(
+            BandwidthUsage.timestamp >= start_date,
+            BandwidthUsage.timestamp <= end_date,
+        )
+
+        if device_id:
+            query = query.where(BandwidthUsage.device_id == device_id)
+
+        query = query.order_by(BandwidthUsage.timestamp.asc())
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_aggregated_usage(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        interval: Literal["hour", "day", "week"] = "day",
+        device_id: int | None = None,
+    ) -> list[dict]:
+        """
+        Get aggregated bandwidth usage by time interval.
+
+        Args:
+            start_date: Start of date range
+            end_date: End of date range
+            interval: Aggregation interval (hour, day, week)
+            device_id: Optional device ID to filter by
+
+        Returns:
+            List of dictionaries with aggregated data
+        """
+        # Determine the date truncation based on interval
+        if interval == "hour":
+            date_trunc = func.date_trunc("hour", BandwidthUsage.timestamp)
+        elif interval == "week":
+            date_trunc = func.date_trunc("week", BandwidthUsage.timestamp)
+        else:  # day
+            date_trunc = func.date_trunc("day", BandwidthUsage.timestamp)
+
+        query = select(
+            date_trunc.label("period"),
+            func.sum(BandwidthUsage.bytes_sent).label("total_sent"),
+            func.sum(BandwidthUsage.bytes_received).label("total_received"),
+            func.avg(BandwidthUsage.upload_speed_mbps).label("avg_upload_speed"),
+            func.avg(BandwidthUsage.download_speed_mbps).label("avg_download_speed"),
+            func.count(BandwidthUsage.id).label("record_count"),
+        ).where(
+            BandwidthUsage.timestamp >= start_date,
+            BandwidthUsage.timestamp <= end_date,
+        )
+
+        if device_id:
+            query = query.where(BandwidthUsage.device_id == device_id)
+
+        query = query.group_by("period").order_by("period")
+        result = await self.session.execute(query)
+
+        return [
+            {
+                "period": row.period,
+                "total_bytes_sent": int(row.total_sent or 0),
+                "total_bytes_received": int(row.total_received or 0),
+                "total_bytes": int((row.total_sent or 0) + (row.total_received or 0)),
+                "avg_upload_speed_mbps": float(row.avg_upload_speed or 0.0),
+                "avg_download_speed_mbps": float(row.avg_download_speed or 0.0),
+                "record_count": int(row.record_count or 0),
+            }
+            for row in result
+        ]
+
+    async def get_top_consumers(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int = 10,
+        order_by: Literal["sent", "received", "total"] = "total",
+    ) -> list[dict]:
+        """
+        Get top bandwidth consumers within date range.
+
+        Args:
+            start_date: Start of date range
+            end_date: End of date range
+            limit: Number of top consumers to return
+            order_by: Order by sent, received, or total bytes
+
+        Returns:
+            List of dictionaries with device usage statistics
+        """
+        query = select(
+            BandwidthUsage.device_id,
+            func.sum(BandwidthUsage.bytes_sent).label("total_sent"),
+            func.sum(BandwidthUsage.bytes_received).label("total_received"),
+            (
+                func.sum(BandwidthUsage.bytes_sent) + func.sum(BandwidthUsage.bytes_received)
+            ).label("total_bytes"),
+            func.avg(BandwidthUsage.upload_speed_mbps).label("avg_upload_speed"),
+            func.avg(BandwidthUsage.download_speed_mbps).label("avg_download_speed"),
+        ).where(
+            BandwidthUsage.timestamp >= start_date,
+            BandwidthUsage.timestamp <= end_date,
+        ).group_by(BandwidthUsage.device_id)
+
+        # Order by specified metric
+        if order_by == "sent":
+            query = query.order_by(func.sum(BandwidthUsage.bytes_sent).desc())
+        elif order_by == "received":
+            query = query.order_by(func.sum(BandwidthUsage.bytes_received).desc())
+        else:  # total
+            query = query.order_by(
+                (
+                    func.sum(BandwidthUsage.bytes_sent) + func.sum(BandwidthUsage.bytes_received)
+                ).desc()
+            )
+
+        query = query.limit(limit)
+        result = await self.session.execute(query)
+
+        return [
+            {
+                "device_id": row.device_id,
+                "total_bytes_sent": int(row.total_sent or 0),
+                "total_bytes_received": int(row.total_received or 0),
+                "total_bytes": int(row.total_bytes or 0),
+                "avg_upload_speed_mbps": float(row.avg_upload_speed or 0.0),
+                "avg_download_speed_mbps": float(row.avg_download_speed or 0.0),
+            }
+            for row in result
+        ]
