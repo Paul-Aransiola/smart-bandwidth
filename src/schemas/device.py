@@ -58,7 +58,6 @@ class DeviceBase(BaseModel):
 
 class DeviceCreate(DeviceBase):
     """Schema for creating a device."""
-
     pass
 
 
