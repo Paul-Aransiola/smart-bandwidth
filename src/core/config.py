@@ -54,6 +54,10 @@ class Settings(BaseSettings):
 
     # Network Monitoring
     network_interface: str = Field(default="eth0", description="Network interface to monitor")
+    enable_monitoring: bool = Field(
+        default=False, description="Enable background network monitoring"
+    )
+    monitoring_interval: int = Field(default=30, description="Bandwidth save interval in seconds")
     monitor_interval: int = Field(default=5, description="Monitoring interval in seconds")
     packet_capture_timeout: int = Field(default=10, description="Packet capture timeout in seconds")
     capture_filter: str = Field(default="", description="BPF filter for packet capture")
