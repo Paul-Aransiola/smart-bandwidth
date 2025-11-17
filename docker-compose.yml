@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bandwidth-monitor-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./bandwidth_monitor.db:/app/bandwidth_monitor.db
+    environment:
+      - ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DATABASE_URL=sqlite+aiosqlite:///./bandwidth_monitor.db
+      - LOG_LEVEL=INFO
+    networks:
+      - bandwidth-monitor-network
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    privileged: true
+    restart: unless-stopped
+
+  dashboard:
+    image: nginx:alpine
+    container_name: bandwidth-monitor-dashboard
+    ports:
+      - "3000:80"
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    networks:
+      - bandwidth-monitor-network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+networks:
+  bandwidth-monitor-network:
+    driver: bridge
