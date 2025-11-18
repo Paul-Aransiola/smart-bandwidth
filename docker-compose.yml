@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: bandwidth-monitor-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - bandwidth-monitor-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  # Main API service
   api:
     build:
       context: .
@@ -17,14 +36,32 @@ services:
       - API_PORT=8000
       - DATABASE_URL=sqlite+aiosqlite:///./bandwidth_monitor.db
       - LOG_LEVEL=INFO
+      - REDIS_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - CACHE_TTL=300
+      - ENABLE_SECURITY_HEADERS=true
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
     networks:
       - bandwidth-monitor-network
+    depends_on:
+      redis:
+        condition: service_healthy
     cap_add:
       - NET_ADMIN
       - NET_RAW
     privileged: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
+  # Dashboard (Nginx)
   dashboard:
     image: nginx:alpine
     container_name: bandwidth-monitor-dashboard
@@ -35,9 +72,19 @@ services:
     networks:
       - bandwidth-monitor-network
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
 networks:
   bandwidth-monitor-network:
     driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
