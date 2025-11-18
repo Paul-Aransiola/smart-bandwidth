@@ -1,0 +1,46 @@
+[Unit]
+Description=Smart Bandwidth Monitor API
+After=network.target redis.service postgresql.service
+
+[Service]
+Type=simple
+User=bandwidth
+Group=bandwidth
+WorkingDirectory=/opt/bandwidth-monitor
+Environment="PATH=/opt/bandwidth-monitor/venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+EnvironmentFile=/opt/bandwidth-monitor/.env
+
+# Main process
+ExecStart=/opt/bandwidth-monitor/venv/bin/gunicorn src.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000 \
+    --access-logfile /opt/bandwidth-monitor/logs/access.log \
+    --error-logfile /opt/bandwidth-monitor/logs/error.log \
+    --log-level warning \
+    --timeout 120 \
+    --graceful-timeout 30
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=2G
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bandwidth-monitor/logs /opt/bandwidth-monitor/bandwidth_monitor.db
+
+# Network capabilities (required for bandwidth control)
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+
+[Install]
+WantedBy=multi-user.target
