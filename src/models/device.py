@@ -89,6 +89,21 @@ class Device(Base):
         back_populates="device",
         cascade="all, delete-orphan",
     )
+    quotas = relationship(
+        "BandwidthQuota",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
+    qos_policies = relationship(
+        "QoSPolicy",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
+    throttle_schedules = relationship(
+        "ThrottleSchedule",
+        back_populates="device",
+        cascade="all, delete-orphan",
+    )
 
     # Indexes
     __table_args__ = (
