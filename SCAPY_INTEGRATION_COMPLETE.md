@@ -9,12 +9,14 @@ Enhanced Scapy integration with **protocol analysis**, **application detection**
 ### 1. **Protocol Detection** 🔍
 
 Automatically detects and tracks network protocols:
+
 - ✅ **TCP** - Transmission Control Protocol
 - ✅ **UDP** - User Datagram Protocol  
 - ✅ **ICMP** - Internet Control Message Protocol
 - ✅ **Other** - All other protocols
 
 **Data Structure**:
+
 ```python
 protocol_count: {
     "192.168.1.100": {
@@ -29,6 +31,7 @@ protocol_count: {
 ### 2. **Application Detection** 🌐
 
 Identifies applications based on port numbers:
+
 - ✅ **HTTP** (port 80, 8080, 8000, 3000, 5000)
 - ✅ **HTTPS** (port 443)
 - ✅ **SSH** (port 22)
@@ -41,6 +44,7 @@ Identifies applications based on port numbers:
 - ✅ **DHCP** (port 67, 68)
 
 **Data Structure**:
+
 ```python
 application_count: {
     "192.168.1.100": {
@@ -57,11 +61,13 @@ application_count: {
 ### 3. **DNS Query Tracking** 🔎
 
 Tracks all DNS queries per device with:
+
 - Domain name (query)
 - Timestamp
 - History (last 100 queries per device)
 
 **Data Structure**:
+
 ```python
 dns_queries: {
     "192.168.1.100": [
@@ -80,11 +86,13 @@ dns_queries: {
 ### 4. **Connection Tracking** 🔗
 
 Tracks active network connections per device:
+
 - Connection keys: `protocol:destination_ip:destination_port`
 - Unique connections per device
 - Real-time connection monitoring
 
 **Data Structure**:
+
 ```python
 active_connections: {
     "192.168.1.100": {
@@ -98,12 +106,14 @@ active_connections: {
 ## New API Endpoints
 
 ### Protocol Statistics
+
 ```http
 GET /api/v1/stats/protocols
 GET /api/v1/stats/protocols?ip_address=192.168.1.100
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -121,12 +131,14 @@ GET /api/v1/stats/protocols?ip_address=192.168.1.100
 ```
 
 ### Application Statistics
+
 ```http
 GET /api/v1/stats/applications
 GET /api/v1/stats/applications?ip_address=192.168.1.100
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -146,11 +158,13 @@ GET /api/v1/stats/applications?ip_address=192.168.1.100
 ```
 
 ### DNS Query History
+
 ```http
 GET /api/v1/stats/devices/192.168.1.100/dns?limit=50
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -173,11 +187,13 @@ GET /api/v1/stats/devices/192.168.1.100/dns?limit=50
 ```
 
 ### Active Connections
+
 ```http
 GET /api/v1/stats/devices/192.168.1.100/connections
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -195,11 +211,13 @@ GET /api/v1/stats/devices/192.168.1.100/connections
 ```
 
 ### Detailed Device Statistics
+
 ```http
 GET /api/v1/stats/devices/192.168.1.100/detailed
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -231,6 +249,7 @@ GET /api/v1/stats/devices/192.168.1.100/detailed
 ```
 
 ### Top Talkers
+
 ```http
 GET /api/v1/stats/top-talkers?limit=10&metric=total_bytes
 ```
@@ -238,6 +257,7 @@ GET /api/v1/stats/top-talkers?limit=10&metric=total_bytes
 **Metrics**: `total_bytes`, `bytes_sent`, `bytes_received`, `packet_count`
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -262,7 +282,8 @@ GET /api/v1/stats/top-talkers?limit=10&metric=total_bytes
 
 ### `NetworkMonitor` Class
 
-#### New Methods:
+#### New Methods
+
 ```python
 # Protocol detection
 def _detect_protocol(packet: Packet) -> str
@@ -292,7 +313,8 @@ def get_active_connections(ip_address: str) -> list
 def get_top_talkers(limit: int = 10, metric: str = "total_bytes") -> list
 ```
 
-#### Enhanced Methods:
+#### Enhanced Methods
+
 ```python
 # Now includes detailed statistics when include_details=True
 def get_device_stats(ip_address: str, include_details: bool = False) -> dict
@@ -330,27 +352,32 @@ Done
 ## Use Cases
 
 ### 1. **Network Visibility**
+
 - See which protocols are most used on your network
 - Identify bandwidth-heavy applications
 - Monitor streaming vs browsing vs downloads
 
 ### 2. **Security Monitoring**
+
 - Track unusual protocol usage (excessive ICMP)
 - Detect suspicious applications on unusual ports
 - Monitor DNS queries for malicious domains
 - Identify port scanning (many connection attempts)
 
 ### 3. **Bandwidth Management**
+
 - Throttle specific applications (e.g., limit HTTP but not HTTPS)
 - QoS based on application type (prioritize SSH over HTTP)
 - Block access to specific domains via DNS monitoring
 
 ### 4. **User Activity Tracking**
+
 - See what websites users visit (DNS queries)
 - Monitor active connections per device
 - Identify heavy users by application type
 
 ### 5. **Troubleshooting**
+
 - Diagnose connectivity issues
 - Identify misconfigured applications
 - Monitor DNS resolution problems
@@ -359,17 +386,20 @@ Done
 ## Performance Considerations
 
 ### Memory Usage
+
 - **DNS queries**: Limited to 100 per device (auto-cleanup)
 - **Connections**: Active connections only (closed connections removed)
 - **Protocols/Apps**: Counters only (minimal memory)
 
 ### CPU Usage
+
 - **Packet processing**: ~5-10 microseconds per packet
 - **Protocol detection**: O(1) - constant time
 - **Application detection**: O(1) - dict lookup
 - **DNS tracking**: O(1) - append to list
 
 ### Optimizations
+
 - ✅ No packet storage (`store=False` in AsyncSniffer)
 - ✅ BPF filters for kernel-level packet filtering
 - ✅ Efficient data structures (defaultdict, sets)
@@ -378,11 +408,13 @@ Done
 ## Testing
 
 ### Test Coverage
+
 - ✅ **41 tests passing** for network_monitor.py
 - ✅ **97% code coverage** on network monitoring
 - ✅ All new methods tested
 
 ### Test Execution
+
 ```bash
 # Run network monitor tests
 pytest tests/unit/test_network_monitor.py -v
@@ -394,6 +426,7 @@ pytest tests/unit/test_network_monitor.py --cov=src/services/network_monitor
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # Enable monitoring
 ENABLE_MONITORING=true
@@ -416,14 +449,16 @@ CAPTURE_FILTER=
 
 ## Security & Privacy
 
-### Built-in Safeguards:
+### Built-in Safeguards
+
 - ✅ No packet payload inspection (headers only)
 - ✅ No packet storage on disk
 - ✅ Configurable data retention (100 DNS queries limit)
 - ✅ IP-based tracking (no personal data)
 - ✅ Optional BPF filtering to exclude sensitive protocols
 
-### Recommendations:
+### Recommendations
+
 - 📋 Implement data retention policies
 - 📋 Obtain user consent if required by law
 - 📋 Consider IP anonymization for compliance
@@ -432,7 +467,8 @@ CAPTURE_FILTER=
 
 ## Future Enhancements
 
-### Possible Extensions:
+### Possible Extensions
+
 1. **Deep Packet Inspection (DPI)** - Analyze application-layer data
 2. **Machine Learning** - Detect anomalies and predict usage
 3. **GeoIP Tracking** - Map connections to geographic locations
