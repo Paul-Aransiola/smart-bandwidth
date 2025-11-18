@@ -175,9 +175,10 @@ class TestLogin:
         """Test successful login with token generation."""
         mock_user_repo.get_by_username_or_email.return_value = sample_user
 
-        with patch("src.services.auth_service.verify_password") as mock_verify, patch(
-            "src.services.auth_service.create_access_token"
-        ) as mock_token:
+        with (
+            patch("src.services.auth_service.verify_password") as mock_verify,
+            patch("src.services.auth_service.create_access_token") as mock_token,
+        ):
             mock_verify.return_value = True
             mock_token.return_value = (
                 "test_token_12345",
@@ -309,9 +310,10 @@ class TestPasswordChange:
         # Modify sample_user directly
         mock_user_repo.update.return_value = sample_user
 
-        with patch("src.services.auth_service.verify_password") as mock_verify, patch(
-            "src.services.auth_service.get_password_hash"
-        ) as mock_hash:
+        with (
+            patch("src.services.auth_service.verify_password") as mock_verify,
+            patch("src.services.auth_service.get_password_hash") as mock_hash,
+        ):
             mock_verify.return_value = True
             mock_hash.return_value = "$2b$12$newhashedpassword"
 

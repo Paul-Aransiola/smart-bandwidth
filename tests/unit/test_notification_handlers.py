@@ -416,8 +416,9 @@ class TestWebhookNotificationHandler:
         mock_session.__aenter__.return_value = mock_session
         mock_session.__aexit__.return_value = None
 
-        with patch("aiohttp.ClientSession", return_value=mock_session), patch(
-            "asyncio.sleep", new_callable=AsyncMock
+        with (
+            patch("aiohttp.ClientSession", return_value=mock_session),
+            patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await handler.send(sample_alert, sample_rule)
 
@@ -441,8 +442,9 @@ class TestWebhookNotificationHandler:
         mock_session.__aenter__.return_value = mock_session
         mock_session.__aexit__.return_value = None
 
-        with patch("aiohttp.ClientSession", return_value=mock_session), patch(
-            "asyncio.sleep", new_callable=AsyncMock
+        with (
+            patch("aiohttp.ClientSession", return_value=mock_session),
+            patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await handler.send(sample_alert, sample_rule)
 

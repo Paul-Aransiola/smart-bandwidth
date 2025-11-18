@@ -33,6 +33,7 @@ class NetworkMonitor:
 ### 2. Packet Processing
 
 Each captured packet is processed to extract:
+
 - **Source IP**: Tracks outgoing traffic
 - **Destination IP**: Tracks incoming traffic
 - **Packet Size**: Calculates bandwidth usage
@@ -95,11 +96,13 @@ CAPTURE_FILTER=
 ### System Requirements
 
 Scapy requires:
+
 - **libpcap** (packet capture library)
 - **NET_ADMIN** and **NET_RAW** capabilities (for packet capture)
 - **Root/Admin privileges** (or capabilities)
 
 #### Linux Installation
+
 ```bash
 # Debian/Ubuntu
 sudo apt-get install libpcap-dev
@@ -112,7 +115,9 @@ sudo pacman -S libpcap
 ```
 
 #### Docker Setup
+
 Already configured in `Dockerfile`:
+
 ```dockerfile
 # Build stage
 RUN apt-get install -y libpcap-dev
@@ -164,6 +169,7 @@ CAPTURE_FILTER="not port 22"                  # Exclude SSH
 You can enhance the `_process_packet` method to extract more information:
 
 #### Example: Protocol Analysis
+
 ```python
 from scapy.all import TCP, UDP, ICMP
 
@@ -199,6 +205,7 @@ def _process_packet(self, packet: Packet) -> None:
 ```
 
 #### Example: Application Detection
+
 ```python
 def _detect_application(self, packet: Packet) -> str:
     """Detect application based on port numbers."""
@@ -223,6 +230,7 @@ def _detect_application(self, packet: Packet) -> str:
 ```
 
 #### Example: DNS Query Tracking
+
 ```python
 from scapy.all import DNS, DNSQR
 
@@ -243,6 +251,7 @@ def _process_packet(self, packet: Packet) -> None:
 ### 3. Performance Optimization
 
 #### Packet Sampling
+
 For high-traffic networks, sample packets instead of capturing all:
 
 ```python
@@ -258,6 +267,7 @@ def _process_packet(self, packet: Packet) -> None:
 ```
 
 #### Store Only Summaries
+
 Don't store individual packets, only statistics:
 
 ```python
@@ -271,6 +281,7 @@ self.sniffer = AsyncSniffer(
 ```
 
 #### Use BPF Filters
+
 Filter at kernel level (faster than Python filtering):
 
 ```python
@@ -289,11 +300,13 @@ if TCP in packet and (packet[TCP].dport == 80 or packet[TCP].dport == 443):
 Packet capture requires elevated privileges:
 
 #### Option 1: Run with sudo (Development)
+
 ```bash
 sudo python -m uvicorn src.main:app --reload
 ```
 
 #### Option 2: Grant capabilities (Production)
+
 ```bash
 # Grant capabilities to Python binary
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/python3.11
@@ -303,6 +316,7 @@ sudo setcap cap_net_raw,cap_net_admin=eip /path/to/venv/bin/python
 ```
 
 #### Option 3: Docker with capabilities (Recommended)
+
 ```yaml
 # docker-compose.yml
 services:
@@ -316,7 +330,8 @@ services:
 
 **Important**: Packet capture can expose sensitive data.
 
-#### Best Practices:
+#### Best Practices
+
 - ✅ Only capture packet headers (not payload)
 - ✅ Anonymize IP addresses if required
 - ✅ Use BPF filters to exclude sensitive protocols
@@ -324,6 +339,7 @@ services:
 - ✅ Implement data retention policies
 
 #### Example: IP Anonymization
+
 ```python
 import hashlib
 
@@ -346,6 +362,7 @@ def anonymize_ip(ip: str) -> str:
 **Problem**: `PermissionError: [Errno 1] Operation not permitted`
 
 **Solution**:
+
 1. Run with sudo: `sudo python -m uvicorn src.main:app`
 2. Or grant capabilities: `sudo setcap cap_net_raw,cap_net_admin=eip $(which python3)`
 3. Or use Docker with capabilities (docker-compose.prod.yml)
@@ -355,7 +372,9 @@ def anonymize_ip(ip: str) -> str:
 **Problem**: `NetworkMonitorException: Network interface 'eth0' not found`
 
 **Solution**:
+
 1. List available interfaces:
+
    ```bash
    # Linux
    ip link show
@@ -368,6 +387,7 @@ def anonymize_ip(ip: str) -> str:
    ```
 
 2. Update `.env`:
+
    ```bash
    # Common interface names:
    # Linux: eth0, ens33, wlan0
@@ -381,6 +401,7 @@ def anonymize_ip(ip: str) -> str:
 **Problem**: Sniffer starts but no packets are captured.
 
 **Solutions**:
+
 1. **Check BPF filter**: Remove or simplify `CAPTURE_FILTER`
 2. **Verify interface is active**: `ip link show <interface>`
 3. **Check interface has traffic**: `sudo tcpdump -i <interface>`
@@ -391,10 +412,12 @@ def anonymize_ip(ip: str) -> str:
 **Problem**: Application uses too much memory during packet capture.
 
 **Solutions**:
+
 1. **Use `store=False`** in AsyncSniffer (already set)
 2. **Add BPF filter** to reduce packet volume
 3. **Implement packet sampling**
 4. **Clear statistics periodically**:
+
    ```python
    # Periodically reset old stats
    async def cleanup_old_stats(self):
@@ -421,6 +444,7 @@ pytest tests/unit/test_network_monitor.py --cov=src/services/network_monitor
 ### Manual Testing
 
 #### 1. Check Interface Detection
+
 ```python
 from src.services.network_monitor import NetworkMonitor
 
@@ -430,6 +454,7 @@ print(monitor.get_network_interfaces())
 ```
 
 #### 2. Test Packet Capture
+
 ```python
 import asyncio
 from src.services.network_monitor import NetworkMonitor
@@ -453,6 +478,7 @@ asyncio.run(test_capture())
 ```
 
 #### 3. Test with tcpdump Comparison
+
 ```bash
 # Terminal 1: Run your app
 python -m uvicorn src.main:app
@@ -492,36 +518,41 @@ class BandwidthController:
 ## Future Enhancements
 
 ### 1. Deep Packet Inspection (DPI)
+
 - Analyze application-layer protocols
 - Identify streaming services, gaming, etc.
 - QoS based on application type
 
 ### 2. Machine Learning
+
 - Detect unusual traffic patterns
 - Predict bandwidth spikes
 - Automatic QoS optimization
 
 ### 3. Protocol-Specific Stats
+
 - Track TCP/UDP/ICMP separately
 - Monitor connection states
 - Detect failed connections
 
 ### 4. Export to Wireshark
+
 - Save packets for offline analysis
 - Generate PCAP files
 - Integration with network analysis tools
 
 ### 5. Real-time Visualization
+
 - Live packet stream via WebSocket
 - Network topology mapping
 - Traffic flow diagrams
 
 ## Resources
 
-- **Scapy Documentation**: https://scapy.readthedocs.io/
-- **BPF Syntax**: https://biot.com/capstats/bpf.html
-- **Packet Capture Guide**: https://www.tcpdump.org/manpages/pcap-filter.7.html
-- **Network Analysis**: https://www.wireshark.org/docs/
+- **Scapy Documentation**: <https://scapy.readthedocs.io/>
+- **BPF Syntax**: <https://biot.com/capstats/bpf.html>
+- **Packet Capture Guide**: <https://www.tcpdump.org/manpages/pcap-filter.7.html>
+- **Network Analysis**: <https://www.wireshark.org/docs/>
 
 ## Summary
 

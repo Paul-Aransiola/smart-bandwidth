@@ -3,6 +3,7 @@
 ## Pre-Deployment
 
 ### Security
+
 - [ ] Generate unique SECRET_KEY: `openssl rand -hex 32`
 - [ ] Update SECRET_KEY in .env file
 - [ ] Change default admin passwords
@@ -11,6 +12,7 @@
 - [ ] Set ENV=production in .env
 
 ### Database
+
 - [ ] Set up PostgreSQL or MySQL database
 - [ ] Create database and user with proper permissions
 - [ ] Update DATABASE_URL in .env
@@ -19,6 +21,7 @@
 - [ ] Set up database backups
 
 ### Redis
+
 - [ ] Install and configure Redis server
 - [ ] Set Redis password (if applicable)
 - [ ] Update Redis connection settings in .env
@@ -26,6 +29,7 @@
 - [ ] Test Redis connection: `redis-cli ping`
 
 ### Network Configuration
+
 - [ ] Identify network interface to monitor (eth0, ens0, etc.)
 - [ ] Update NETWORK_INTERFACE in .env
 - [ ] Verify iptables and tc (traffic control) are available
@@ -33,6 +37,7 @@
 - [ ] Configure capture filters if needed
 
 ### Application Settings
+
 - [ ] Set appropriate LOG_LEVEL (WARNING or ERROR for production)
 - [ ] Configure monitoring intervals
 - [ ] Set bandwidth limits (MAX_BANDWIDTH_MBPS)
@@ -40,6 +45,7 @@
 - [ ] Configure rate limiting
 
 ### Notifications (Optional)
+
 - [ ] Configure SMTP settings for email notifications
 - [ ] Test email delivery
 - [ ] Set up Slack webhook (if using)
@@ -49,6 +55,7 @@
 ## Deployment
 
 ### Docker Deployment
+
 - [ ] Install Docker and Docker Compose
 - [ ] Copy .env.production to .env and configure
 - [ ] Build images: `docker-compose build`
@@ -57,6 +64,7 @@
 - [ ] View logs: `docker-compose logs -f`
 
 ### Manual Deployment
+
 - [ ] Install Python 3.11+
 - [ ] Install system dependencies (libpcap, iptables, iproute2)
 - [ ] Create virtual environment
@@ -66,6 +74,7 @@
 - [ ] Enable and start service: `systemctl enable --now bandwidth-monitor`
 
 ### Reverse Proxy (Recommended)
+
 - [ ] Install Nginx or Caddy
 - [ ] Configure SSL/TLS certificates (Let's Encrypt recommended)
 - [ ] Set up reverse proxy (see nginx.conf.example)
@@ -76,8 +85,9 @@
 ## Post-Deployment
 
 ### Verification
+
 - [ ] Access API health check: `curl https://yourdomain.com/api/v1/health`
-- [ ] Check API documentation: https://yourdomain.com/docs
+- [ ] Check API documentation: <https://yourdomain.com/docs>
 - [ ] Test WebSocket connection
 - [ ] Verify database connectivity
 - [ ] Confirm Redis caching is working
@@ -85,6 +95,7 @@
 - [ ] Verify device blocking/throttling
 
 ### Monitoring
+
 - [ ] Set up log rotation
 - [ ] Configure monitoring alerts
 - [ ] Set up health check automation: `scripts/health-check.sh`
@@ -93,6 +104,7 @@
 - [ ] Monitor database performance
 
 ### Backups
+
 - [ ] Configure automated database backups
 - [ ] Set up configuration backups: `scripts/backup.sh`
 - [ ] Test backup restoration process
@@ -100,6 +112,7 @@
 - [ ] Set up off-site backup storage
 
 ### Security Hardening
+
 - [ ] Configure firewall rules (ufw/iptables)
 - [ ] Disable unnecessary services
 - [ ] Set up fail2ban (if applicable)
@@ -109,6 +122,7 @@
 - [ ] Set up intrusion detection (optional)
 
 ### Documentation
+
 - [ ] Document deployment architecture
 - [ ] Create runbook for common operations
 - [ ] Document troubleshooting procedures
@@ -119,18 +133,21 @@
 ## Maintenance
 
 ### Daily
+
 - [ ] Check service health: `scripts/health-check.sh`
 - [ ] Review error logs
 - [ ] Monitor disk space
 - [ ] Check Redis memory usage
 
 ### Weekly
+
 - [ ] Review application metrics
 - [ ] Check bandwidth usage trends
 - [ ] Verify backups are running
 - [ ] Review security alerts
 
 ### Monthly
+
 - [ ] Test backup restoration
 - [ ] Review and rotate logs
 - [ ] Update dependencies (security patches)
@@ -139,6 +156,7 @@
 - [ ] Check for application updates
 
 ### Quarterly
+
 - [ ] Review and update documentation
 - [ ] Disaster recovery drill
 - [ ] Security audit
@@ -148,6 +166,7 @@
 ## Useful Commands
 
 ### Docker
+
 ```bash
 # View logs
 docker-compose logs -f api
@@ -166,6 +185,7 @@ docker-compose down -v  # Warning: removes volumes
 ```
 
 ### Service Management (systemd)
+
 ```bash
 # Check status
 systemctl status bandwidth-monitor
@@ -181,6 +201,7 @@ systemctl stop bandwidth-monitor
 ```
 
 ### Database
+
 ```bash
 # Backup PostgreSQL
 pg_dump -U username bandwidth_monitor > backup.sql
@@ -196,6 +217,7 @@ alembic downgrade -1
 ```
 
 ### Health Checks
+
 ```bash
 # API health
 curl http://localhost:8000/api/v1/health
@@ -212,24 +234,29 @@ psql -U username -d bandwidth_monitor -c "SELECT 1;"
 ### Common Issues
 
 **SECRET_KEY error**
+
 - Generate new key: `openssl rand -hex 32`
 - Update .env file
 
 **Database connection failed**
+
 - Verify DATABASE_URL is correct
 - Check database is running
 - Confirm user has permissions
 
 **Redis connection failed**
+
 - Verify Redis is running: `redis-cli ping`
 - Check REDIS_HOST and REDIS_PORT
 - Verify Redis password if set
 
 **Permission denied (network monitoring)**
+
 - Ensure NET_ADMIN and NET_RAW capabilities (Docker)
 - Or run with sudo / set capabilities (manual)
 
 **High memory usage**
+
 - Check Redis memory: `redis-cli INFO memory`
 - Review database connection pool size
 - Monitor network packet capture

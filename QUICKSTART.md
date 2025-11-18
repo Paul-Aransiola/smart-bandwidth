@@ -3,12 +3,15 @@
 ## 🚀 Deploy in 3 Steps
 
 ### 1. Generate Secret Key
+
 ```bash
 ./scripts/generate-secret.sh
 ```
+
 Copy the generated key for the next step.
 
 ### 2. Configure Environment
+
 ```bash
 # Copy production template
 cp .env.production .env
@@ -24,6 +27,7 @@ nano .env  # or vim .env
 ```
 
 ### 3. Deploy
+
 ```bash
 # One-command deployment
 ./scripts/deploy.sh
@@ -106,12 +110,14 @@ git pull && ./scripts/deploy.sh
 ## 🆘 Troubleshooting
 
 ### SECRET_KEY Error
+
 ```bash
 ./scripts/generate-secret.sh
 # Copy the key to .env
 ```
 
 ### Database Connection Failed
+
 ```bash
 # Check PostgreSQL is running
 docker-compose -f docker-compose.prod.yml ps postgres
@@ -121,6 +127,7 @@ docker-compose -f docker-compose.prod.yml logs postgres
 ```
 
 ### Redis Connection Failed
+
 ```bash
 # Check Redis is running
 docker-compose -f docker-compose.prod.yml ps redis
@@ -130,6 +137,7 @@ docker exec -it bandwidth-redis redis-cli ping
 ```
 
 ### Permission Denied
+
 ```bash
 # Ensure scripts are executable
 chmod +x scripts/*.sh

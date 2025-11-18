@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: "Deployment environment"
         required: true
-        default: 'production'
+        default: "production"
         type: choice
         options:
           - production
@@ -23,7 +23,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,8 +31,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'pip'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -59,7 +59,7 @@ jobs:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -99,9 +99,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main'
-    environment: 
+    environment:
       name: ${{ github.event.inputs.environment || 'production' }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -115,25 +115,25 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
             cd /opt/bandwidth-monitor
-            
+
             # Pull latest code
             git pull origin main
-            
+
             # Pull latest Docker images
             docker-compose -f docker-compose.prod.yml pull
-            
+
             # Run database migrations
             docker-compose -f docker-compose.prod.yml run --rm api alembic upgrade head
-            
+
             # Restart services
             docker-compose -f docker-compose.prod.yml up -d --remove-orphans
-            
+
             # Wait for health checks
             sleep 10
-            
+
             # Verify deployment
             curl -f http://localhost:8000/api/v1/health || exit 1
-            
+
             # Clean up old images
             docker image prune -af --filter "until=72h"
 

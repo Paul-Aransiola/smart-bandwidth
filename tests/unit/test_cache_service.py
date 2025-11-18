@@ -41,6 +41,7 @@ class TestCacheServiceConnection:
 
     async def test_connect_success(self, cache_service, mock_redis):
         """Test successful Redis connection."""
+
         async def mock_from_url_async(*args, **kwargs):
             return mock_redis
 
