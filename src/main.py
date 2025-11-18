@@ -197,6 +197,79 @@ async def periodic_bandwidth_save():
             except Exception as alert_error:
                 logger.error(f"Error evaluating alert rules: {alert_error}", exc_info=True)
 
+            # Check bandwidth quotas and reset if needed
+            try:
+                from src.repositories.advanced_controls_repository import BandwidthQuotaRepository
+
+                async with AsyncSessionLocal() as quota_session:
+                    quota_repo = BandwidthQuotaRepository(quota_session)
+                    active_quotas = await quota_repo.get_active_quotas()
+
+                    for quota in active_quotas:
+                        # Check if quota needs reset based on quota_type
+                        should_reset = False
+                        if quota.quota_type == "daily" and quota.last_reset_at:
+                            days_since_reset = (datetime.now() - quota.last_reset_at).days
+                            should_reset = days_since_reset >= 1
+                        elif quota.quota_type == "weekly" and quota.last_reset_at:
+                            days_since_reset = (datetime.now() - quota.last_reset_at).days
+                            should_reset = days_since_reset >= 7
+                        elif quota.quota_type == "monthly" and quota.last_reset_at:
+                            days_since_reset = (datetime.now() - quota.last_reset_at).days
+                            should_reset = days_since_reset >= 30
+
+                        if should_reset:
+                            await quota_repo.reset_quota(quota.id)
+                            logger.info(f"Auto-reset {quota.quota_type} quota for device {quota.device_id}")
+
+                    await quota_session.commit()
+
+            except Exception as quota_error:
+                logger.error(f"Error checking bandwidth quotas: {quota_error}", exc_info=True)
+
+            # Execute active throttle schedules
+            try:
+                from src.repositories.advanced_controls_repository import ThrottleScheduleRepository
+                from src.services.bandwidth_controller import BandwidthController
+
+                async with AsyncSessionLocal() as schedule_session:
+                    schedule_repo = ThrottleScheduleRepository(schedule_session)
+                    device_repo = DeviceRepository(schedule_session)
+                    active_schedules = await schedule_repo.get_active_schedules()
+
+                    controller = BandwidthController()
+
+                    for schedule in active_schedules:
+                        device = await device_repo.get_by_id(schedule.device_id)
+                        if not device:
+                            continue
+
+                        # Apply throttle if not already throttled
+                        if not device.is_throttled or device.throttle_limit_mbps != schedule.throttle_limit_mbps:
+                            try:
+                                await controller.throttle(
+                                    device.ip_address,
+                                    schedule.throttle_limit_mbps
+                                )
+                                device.is_throttled = True
+                                device.throttle_limit_mbps = schedule.throttle_limit_mbps
+                                await device_repo.update(device)
+
+                                # Update last_executed timestamp
+                                await schedule_repo.update_last_executed(schedule.id)
+
+                                logger.info(
+                                    f"Applied schedule '{schedule.schedule_name}': "
+                                    f"throttled device {device.ip_address} to {schedule.throttle_limit_mbps} Mbps"
+                                )
+                            except Exception as throttle_error:
+                                logger.error(f"Failed to apply throttle schedule: {throttle_error}")
+
+                    await schedule_session.commit()
+
+            except Exception as schedule_error:
+                logger.error(f"Error executing throttle schedules: {schedule_error}", exc_info=True)
+
         except asyncio.CancelledError:
             logger.info("Bandwidth save task cancelled")
             break
