@@ -131,7 +131,10 @@ class TestAlertRuleEndpoints:
         )
 
         # Should succeed - negative thresholds might be valid for some metrics
-        assert response.status_code in [status.HTTP_201_CREATED, status.HTTP_422_UNPROCESSABLE_ENTITY]
+        assert response.status_code in [
+            status.HTTP_201_CREATED,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+        ]
 
     async def test_create_alert_rule_requires_auth(self, test_client, sample_alert_rule_data):
         """Test that creating alert rule requires authentication."""
@@ -183,7 +186,7 @@ class TestAlertRuleEndpoints:
         """Test listing only enabled alert rules."""
         # Create enabled and disabled rules
         rule_repo = AlertRuleRepository(db_session)
-        
+
         enabled_rule_data = sample_alert_rule_data.copy()
         enabled_rule_data["name"] = "Enabled Rule"
         enabled_rule_data["is_enabled"] = True
@@ -193,7 +196,7 @@ class TestAlertRuleEndpoints:
         disabled_rule_data["name"] = "Disabled Rule"
         disabled_rule_data["is_enabled"] = False
         await rule_repo.create(disabled_rule_data)
-        
+
         await db_session.commit()
 
         response = test_client.get(
@@ -222,10 +225,7 @@ class TestAlertRuleEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert all(
-            rule["device_id"] == 1 or rule["device_id"] is None
-            for rule in data["data"]
-        )
+        assert all(rule["device_id"] == 1 or rule["device_id"] is None for rule in data["data"])
 
     async def test_get_alert_rule_success(self, test_client, user_token, created_alert_rule):
         """Test getting a specific alert rule."""
@@ -249,9 +249,7 @@ class TestAlertRuleEndpoints:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_update_alert_rule_success(
-        self, test_client, admin_token, created_alert_rule
-    ):
+    async def test_update_alert_rule_success(self, test_client, admin_token, created_alert_rule):
         """Test updating an alert rule."""
         update_data = {
             "name": "Updated Alert Rule",
@@ -272,9 +270,7 @@ class TestAlertRuleEndpoints:
         assert data["data"]["threshold_value"] == 75.0
         assert data["data"]["is_enabled"] is False
 
-    async def test_update_alert_rule_partial(
-        self, test_client, admin_token, created_alert_rule
-    ):
+    async def test_update_alert_rule_partial(self, test_client, admin_token, created_alert_rule):
         """Test partial update of alert rule."""
         update_data = {"threshold_value": 100.0}
 
@@ -316,9 +312,7 @@ class TestAlertRuleEndpoints:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    async def test_delete_alert_rule_success(
-        self, test_client, admin_token, created_alert_rule
-    ):
+    async def test_delete_alert_rule_success(self, test_client, admin_token, created_alert_rule):
         """Test deleting an alert rule."""
         response = test_client.delete(
             f"/api/v1/alerts/rules/{created_alert_rule.id}",
@@ -430,7 +424,7 @@ class TestAlertEndpoints:
     ):
         """Test listing alerts filtered by status."""
         alert_repo = AlertRepository(db_session)
-        
+
         # Create active alert
         active_alert_data = {
             "rule_id": created_alert_rule.id,
@@ -450,7 +444,7 @@ class TestAlertEndpoints:
         resolved_alert_data["status"] = AlertStatus.RESOLVED
         resolved_alert_data["resolved_at"] = datetime.utcnow()
         await alert_repo.create(resolved_alert_data)
-        
+
         await db_session.commit()
 
         response = test_client.get(
@@ -467,7 +461,7 @@ class TestAlertEndpoints:
     ):
         """Test listing alerts filtered by severity."""
         alert_repo = AlertRepository(db_session)
-        
+
         # Create critical alert
         critical_alert_data = {
             "rule_id": created_alert_rule.id,
@@ -496,7 +490,7 @@ class TestAlertEndpoints:
     ):
         """Test listing alerts filtered by device."""
         alert_repo = AlertRepository(db_session)
-        
+
         alert_data = {
             "rule_id": created_alert_rule.id,
             "device_id": 1,
@@ -518,10 +512,7 @@ class TestAlertEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert all(
-            alert["device_id"] == 1 or alert["device_id"] is None
-            for alert in data["data"]
-        )
+        assert all(alert["device_id"] == 1 or alert["device_id"] is None for alert in data["data"])
 
     async def test_list_alerts_filter_by_rule(
         self, test_client, user_token, created_alert_rule, created_alert
@@ -541,11 +532,11 @@ class TestAlertEndpoints:
     ):
         """Test listing alerts filtered by date range."""
         alert_repo = AlertRepository(db_session)
-        
+
         # Create alerts with different dates
         now = datetime.utcnow()
         past_date = now - timedelta(days=7)
-        
+
         old_alert_data = {
             "rule_id": created_alert_rule.id,
             "title": "Old Alert",
@@ -562,7 +553,7 @@ class TestAlertEndpoints:
         recent_alert_data["title"] = "Recent Alert"
         recent_alert_data["triggered_at"] = now
         await alert_repo.create(recent_alert_data)
-        
+
         await db_session.commit()
 
         # Query recent alerts
@@ -591,8 +582,7 @@ class TestAlertEndpoints:
         assert data["success"] is True
         # All returned alerts should be active
         assert all(
-            alert["status"] in ["active", "acknowledged", "snoozed"]
-            for alert in data["data"]
+            alert["status"] in ["active", "acknowledged", "snoozed"] for alert in data["data"]
         )
 
     async def test_list_recent_alerts_default(self, test_client, user_token, created_alert):
@@ -611,10 +601,10 @@ class TestAlertEndpoints:
     ):
         """Test listing recent alerts with custom hour window."""
         alert_repo = AlertRepository(db_session)
-        
+
         # Create alerts at different times
         now = datetime.utcnow()
-        
+
         # Recent alert (within 1 hour)
         recent_alert_data = {
             "rule_id": created_alert_rule.id,
@@ -633,7 +623,7 @@ class TestAlertEndpoints:
         old_alert_data["title"] = "Old Alert"
         old_alert_data["triggered_at"] = now - timedelta(hours=2)
         await alert_repo.create(old_alert_data)
-        
+
         await db_session.commit()
 
         response = test_client.get(
@@ -757,9 +747,7 @@ class TestAlertEndpoints:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_update_alert_status_requires_admin(
-        self, test_client, user_token, created_alert
-    ):
+    async def test_update_alert_status_requires_admin(self, test_client, user_token, created_alert):
         """Test that updating alert status requires admin privileges."""
         update_data = {"status": "resolved"}
 
