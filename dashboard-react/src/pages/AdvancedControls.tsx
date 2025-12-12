@@ -43,9 +43,10 @@ interface QoSPolicy {
   id: number;
   policy_name: string;
   device_id?: number;
-  priority_level: number;
-  bandwidth_limit_mbps?: number;
-  burst_limit_mbps?: number;
+  priority: "critical" | "high" | "medium" | "low";
+  min_bandwidth_mbps?: number;
+  max_bandwidth_mbps?: number;
+  guaranteed_bandwidth_mbps?: number;
   is_enabled: boolean;
 }
 
@@ -811,10 +812,10 @@ const QoSSection: React.FC<{
                   Priority
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                  Bandwidth Limit
+                  Guaranteed BW
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">
-                  Burst Limit
+                  Max Bandwidth
                 </th>
                 <th className="text-right py-3 px-4 text-sm font-semibold text-slate-700">
                   Actions
@@ -844,26 +845,28 @@ const QoSSection: React.FC<{
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        policy.priority_level <= 3
+                      className={`px-2 py-1 rounded text-xs font-medium uppercase ${
+                        policy.priority === "critical"
                           ? "bg-red-100 text-red-700"
-                          : policy.priority_level <= 6
+                          : policy.priority === "high"
                           ? "bg-amber-100 text-amber-700"
+                          : policy.priority === "medium"
+                          ? "bg-blue-100 text-blue-700"
                           : "bg-green-100 text-green-700"
                       }`}
                     >
-                      {policy.priority_level}
+                      {policy.priority}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-slate-600">
-                    {policy.bandwidth_limit_mbps
-                      ? `${policy.bandwidth_limit_mbps} Mbps`
-                      : "Unlimited"}
+                    {policy.guaranteed_bandwidth_mbps
+                      ? `${policy.guaranteed_bandwidth_mbps} Mbps`
+                      : "None"}
                   </td>
                   <td className="py-3 px-4 text-slate-600">
-                    {policy.burst_limit_mbps
-                      ? `${policy.burst_limit_mbps} Mbps`
-                      : "None"}
+                    {policy.max_bandwidth_mbps
+                      ? `${policy.max_bandwidth_mbps} Mbps`
+                      : "Unlimited"}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">

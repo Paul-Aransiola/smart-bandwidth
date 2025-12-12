@@ -7,9 +7,10 @@ interface QoSPolicy {
   id?: number;
   policy_name: string;
   device_id?: number;
-  priority_level: number;
-  bandwidth_limit_mbps?: number;
-  burst_limit_mbps?: number;
+  priority: "critical" | "high" | "medium" | "low";
+  min_bandwidth_mbps?: number;
+  max_bandwidth_mbps?: number;
+  guaranteed_bandwidth_mbps?: number;
   is_enabled: boolean;
 }
 
@@ -27,9 +28,10 @@ export const QoSModal: React.FC<QoSModalProps> = ({
   const [formData, setFormData] = useState<QoSPolicy>({
     policy_name: policy?.policy_name || "",
     device_id: policy?.device_id,
-    priority_level: policy?.priority_level || 5,
-    bandwidth_limit_mbps: policy?.bandwidth_limit_mbps,
-    burst_limit_mbps: policy?.burst_limit_mbps,
+    priority: policy?.priority || "medium",
+    min_bandwidth_mbps: policy?.min_bandwidth_mbps,
+    max_bandwidth_mbps: policy?.max_bandwidth_mbps,
+    guaranteed_bandwidth_mbps: policy?.guaranteed_bandwidth_mbps,
     is_enabled: policy?.is_enabled ?? true,
   });
 
@@ -163,47 +165,44 @@ export const QoSModal: React.FC<QoSModalProps> = ({
 
             <div>
               <label
-                htmlFor="priority_level"
+                htmlFor="priority"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
                 Priority Level *
               </label>
               <select
-                id="priority_level"
-                value={formData.priority_level}
+                id="priority"
+                value={formData.priority}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    priority_level: parseInt(e.target.value),
+                    priority: e.target.value as "critical" | "high" | "medium" | "low",
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
-                <option value={1}>1 - Highest</option>
-                <option value={2}>2 - High</option>
-                <option value={3}>3 - Above Normal</option>
-                <option value={4}>4 - Normal</option>
-                <option value={5}>5 - Below Normal</option>
-                <option value={6}>6 - Low</option>
-                <option value={7}>7 - Lowest</option>
+                <option value="critical">Critical (Highest)</option>
+                <option value="high">High</option>
+                <option value="medium">Medium (Normal)</option>
+                <option value="low">Low (Lowest)</option>
               </select>
             </div>
 
             <div>
               <label
-                htmlFor="bandwidth_limit"
+                htmlFor="guaranteed_bandwidth"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Bandwidth Limit (Mbps)
+                Guaranteed Bandwidth (Mbps)
               </label>
               <input
-                id="bandwidth_limit"
+                id="guaranteed_bandwidth"
                 type="number"
-                value={formData.bandwidth_limit_mbps || ""}
+                value={formData.guaranteed_bandwidth_mbps || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    bandwidth_limit_mbps: e.target.value
+                    guaranteed_bandwidth_mbps: e.target.value
                       ? parseFloat(e.target.value)
                       : undefined,
                   })
@@ -214,25 +213,25 @@ export const QoSModal: React.FC<QoSModalProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               <p className="text-xs text-slate-500 mt-1">
-                Maximum sustained bandwidth
+                Guaranteed bandwidth allocation
               </p>
             </div>
 
             <div>
               <label
-                htmlFor="burst_limit"
+                htmlFor="min_bandwidth"
                 className="block text-sm font-medium text-slate-700 mb-2"
               >
-                Burst Limit (Mbps)
+                Min Bandwidth (Mbps)
               </label>
               <input
-                id="burst_limit"
+                id="min_bandwidth"
                 type="number"
-                value={formData.burst_limit_mbps || ""}
+                value={formData.min_bandwidth_mbps || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    burst_limit_mbps: e.target.value
+                    min_bandwidth_mbps: e.target.value
                       ? parseFloat(e.target.value)
                       : undefined,
                   })
@@ -243,7 +242,36 @@ export const QoSModal: React.FC<QoSModalProps> = ({
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
               <p className="text-xs text-slate-500 mt-1">
-                Short-term burst allowance
+                Minimum bandwidth guarantee
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="max_bandwidth"
+                className="block text-sm font-medium text-slate-700 mb-2"
+              >
+                Max Bandwidth (Mbps)
+              </label>
+              <input
+                id="max_bandwidth"
+                type="number"
+                value={formData.max_bandwidth_mbps || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    max_bandwidth_mbps: e.target.value
+                      ? parseFloat(e.target.value)
+                      : undefined,
+                  })
+                }
+                min="0.1"
+                step="0.1"
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Maximum bandwidth limit
               </p>
             </div>
           </div>
