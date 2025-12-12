@@ -236,13 +236,20 @@ async def create_qos_policy(
                 detail="Policy with this name already exists",
             )
 
-        policy_dict = policy_data.model_dump()
-        policy_dict["is_enabled"] = True
+        policy = QoSPolicy(
+            policy_name=policy_data.policy_name,
+            device_id=policy_data.device_id,
+            priority=policy_data.priority,
+            min_bandwidth_mbps=policy_data.min_bandwidth_mbps,
+            max_bandwidth_mbps=policy_data.max_bandwidth_mbps,
+            guaranteed_bandwidth_mbps=policy_data.guaranteed_bandwidth_mbps,
+            is_enabled=True,
+        )
 
-        policy = await repo.create(policy_dict)
+        created_policy = await repo.create(policy)
         await db.commit()
         return success_response(
-            data=QoSPolicyResponse.model_validate(policy).model_dump(),
+            data=QoSPolicyResponse.model_validate(created_policy).model_dump(),
             message="QoS policy created successfully",
         )
     except HTTPException:
