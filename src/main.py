@@ -441,7 +441,7 @@ app.include_router(alerts.router, prefix=settings.api_prefix, tags=["Alerts"])
 app.include_router(threshold.router, prefix=settings.api_prefix, tags=["Threshold"])
 app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
 app.include_router(advanced_controls.router, prefix=settings.api_prefix, tags=["Advanced Controls"])
-app.include_router(websocket.router, tags=["WebSocket"])
+app.include_router(websocket.router, prefix=settings.api_prefix, tags=["WebSocket"])
 
 # Mount static files for dashboard
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -81,6 +81,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [realtimeData, setRealtimeData] = useState<any[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
+  const [wsReconnecting, setWsReconnecting] = useState(false);
 
   // Format bytes to human readable
   const formatBytes = (bytes: number) => {
@@ -156,9 +157,11 @@ export default function Dashboard() {
       if (reconnectAttempts >= maxReconnectAttempts) {
         console.log("Max reconnection attempts reached");
         setWsConnected(false);
+        setWsReconnecting(false);
         return;
       }
 
+      setWsReconnecting(true);
       const wsUrl = `ws://localhost:8000/api/v1/ws/stats`;
 
       ws = new WebSocket(wsUrl);
@@ -166,6 +169,7 @@ export default function Dashboard() {
       ws.onopen = () => {
         console.log("WebSocket connected");
         setWsConnected(true);
+        setWsReconnecting(false);
         reconnectAttempts = 0; // Reset on successful connection
 
         // Send ping every 30 seconds to keep connection alive
@@ -231,6 +235,7 @@ export default function Dashboard() {
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
         setWsConnected(false);
+        setWsReconnecting(true);
       };
 
       ws.onclose = () => {
@@ -245,8 +250,13 @@ export default function Dashboard() {
         // Attempt to reconnect after 5 seconds (with limit)
         reconnectAttempts++;
         if (reconnectAttempts < maxReconnectAttempts) {
-          console.log(`Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`);
+          console.log(
+            `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`
+          );
+          setWsReconnecting(true);
           reconnectTimeout = setTimeout(connectWebSocket, 5000);
+        } else {
+          setWsReconnecting(false);
         }
       };
     };
@@ -316,11 +326,19 @@ export default function Dashboard() {
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100">
           <div
             className={`w-2 h-2 rounded-full ${
-              wsConnected ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+              wsConnected
+                ? "bg-emerald-500 animate-pulse"
+                : wsReconnecting
+                ? "bg-yellow-500 animate-pulse"
+                : "bg-slate-400"
             }`}
           />
           <span className="text-sm text-slate-600">
-            {wsConnected ? "Live" : "Reconnecting..."}
+            {wsConnected
+              ? "Live"
+              : wsReconnecting
+              ? "Reconnecting..."
+              : "Disconnected"}
           </span>
         </div>
       </div>
