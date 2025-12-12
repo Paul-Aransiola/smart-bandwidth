@@ -176,7 +176,11 @@ export const QoSModal: React.FC<QoSModalProps> = ({
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    priority: e.target.value as "critical" | "high" | "medium" | "low",
+                    priority: e.target.value as
+                      | "critical"
+                      | "high"
+                      | "medium"
+                      | "low",
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"

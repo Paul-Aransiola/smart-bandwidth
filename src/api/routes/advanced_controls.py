@@ -371,13 +371,24 @@ async def create_schedule(
     try:
         repo = ThrottleScheduleRepository(db)
 
-        schedule_dict = schedule_data.model_dump()
-        schedule_dict["is_enabled"] = True
+        schedule = ThrottleSchedule(
+            schedule_name=schedule_data.schedule_name,
+            description=schedule_data.description,
+            device_id=schedule_data.device_id,
+            throttle_limit_mbps=schedule_data.throttle_limit_mbps,
+            start_time=schedule_data.start_time,
+            end_time=schedule_data.end_time,
+            recurrence=schedule_data.recurrence,
+            days_of_week=schedule_data.days_of_week,
+            start_date=schedule_data.start_date,
+            end_date=schedule_data.end_date,
+            is_enabled=True,
+        )
 
-        schedule = await repo.create(schedule_dict)
+        created_schedule = await repo.create(schedule)
         await db.commit()
         return success_response(
-            data=ThrottleScheduleResponse.model_validate(schedule).model_dump(),
+            data=ThrottleScheduleResponse.model_validate(created_schedule).model_dump(),
             message="Throttle schedule created successfully",
         )
     except Exception as e:
