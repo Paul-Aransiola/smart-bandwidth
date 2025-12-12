@@ -33,6 +33,9 @@ class TestBlockDevice:
 
     async def test_block_device_success(self, controller):
         """Test successful device blocking."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -59,6 +62,9 @@ class TestBlockDevice:
 
     async def test_block_device_command_failure(self, controller):
         """Test blocking with command failure."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.side_effect = BandwidthControlException("iptables failed")
 
@@ -67,6 +73,9 @@ class TestBlockDevice:
 
     async def test_block_device_logs_actions(self, controller):
         """Test that blocking logs appropriate messages."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -82,6 +91,9 @@ class TestUnblockDevice:
 
     async def test_unblock_device_success(self, controller):
         """Test successful device unblocking."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -100,6 +112,9 @@ class TestUnblockDevice:
 
     async def test_unblock_device_command_failure(self, controller):
         """Test unblocking with command failure."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.side_effect = BandwidthControlException("iptables failed")
 
@@ -113,6 +128,9 @@ class TestThrottleDevice:
 
     async def test_throttle_device_success(self, controller):
         """Test successful device throttling."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -132,6 +150,9 @@ class TestThrottleDevice:
 
     async def test_throttle_device_converts_mbps_to_kbps(self, controller):
         """Test that Mbps is correctly converted to kbps."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -145,6 +166,9 @@ class TestThrottleDevice:
 
     async def test_throttle_device_command_failure(self, controller):
         """Test throttling with command failure."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.side_effect = BandwidthControlException("tc failed")
 
@@ -158,6 +182,9 @@ class TestUnthrottleDevice:
 
     async def test_unthrottle_device_success(self, controller):
         """Test successful device unthrottling."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("", "")
 
@@ -169,6 +196,9 @@ class TestUnthrottleDevice:
 
     async def test_unthrottle_device_command_failure(self, controller):
         """Test unthrottling with command failure."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.side_effect = BandwidthControlException("tc failed")
 
@@ -245,6 +275,9 @@ class TestIsAvailable:
 
     def test_is_available_when_tools_exist(self, controller):
         """Test availability check when tools are available."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.return_value = ("/usr/bin/iptables", "")
 
@@ -257,6 +290,9 @@ class TestIsAvailable:
 
     def test_is_available_when_tools_missing(self, controller):
         """Test availability check when tools are missing."""
+        # Force Linux mode for this test
+        controller.is_linux = True
+
         with patch.object(controller, "_run_command") as mock_run:
             mock_run.side_effect = BandwidthControlException("Command not found")
 
