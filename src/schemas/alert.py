@@ -83,6 +83,21 @@ class AlertRuleResponse(AlertRuleBase):
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
+    @field_validator("notification_config", mode="before")
+    @classmethod
+    def parse_notification_config(cls, v):
+        """Parse notification_config from JSON string if needed."""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            import json
+
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        return v
+
     class Config:
         from_attributes = True
 

@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --no-cache-dir uv
 
 # Copy dependency files
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 
 # Install dependencies
 RUN uv pip install --system --no-cache -e .
@@ -26,33 +26,32 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies (including tools for network monitoring)
 RUN apt-get update && apt-get install -y \
     libpcap0.8 \
+    libpcap-dev \
     iptables \
     iproute2 \
+    tcpdump \
+    net-tools \
     curl \
+    procps \
     && rm -rf /var/lib/apt/lists/*
-
-# Create non-root user (security best practice)
-RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Copy Python packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY --chown=appuser:appuser src/ ./src/
-COPY --chown=appuser:appuser alembic/ ./alembic/
-COPY --chown=appuser:appuser alembic.ini ./
-COPY --chown=appuser:appuser .env.example .env
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY pyproject.toml ./
 
-# Create logs directory with proper permissions
-RUN mkdir -p logs && chown -R appuser:appuser logs
-
-# Switch to non-root user
-# Note: Privileged capabilities (NET_ADMIN, NET_RAW) must be granted via docker-compose
-USER appuser
+# Create required directories with proper permissions
+# Use chmod -R to ensure all files and subdirectories have correct permissions
+RUN mkdir -p logs data static && \
+    chmod -R 777 logs data static && \
+    touch logs/.gitkeep data/.gitkeep static/.gitkeep
 
 # Expose port
 EXPOSE 8000
@@ -60,10 +59,13 @@ EXPOSE 8000
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV ENABLE_MONITORING=true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health || exit 1
 
-# Run database migrations and start the application
-CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"]
+# Run the application with proper network capabilities
+# Note: Container must run with NET_ADMIN and NET_RAW capabilities
+# Create logs directory if mounted volume doesn't exist
+CMD ["sh", "-c", "mkdir -p logs data static && chmod -R 777 logs data static && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"]

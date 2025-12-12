@@ -30,6 +30,7 @@ class DeviceStatus(str, PyEnum):
     INACTIVE = "inactive"
     BLOCKED = "blocked"
     THROTTLED = "throttled"
+    DEACTIVATED = "deactivated"  # Auto-deactivated due to threshold breach
 
 
 class Device(Base):
@@ -44,6 +45,15 @@ class Device(Base):
     mac_address: Mapped[str] = mapped_column(String(17), unique=True, index=True, nullable=False)
     hostname: Mapped[str | None] = mapped_column(String(255), nullable=True)
     device_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    device_type: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, comment="Device type (mobile, computer, router, etc.)"
+    )
+    manufacturer: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="Device manufacturer from MAC address"
+    )
+    os_type: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, comment="Operating system type"
+    )
     status: Mapped[DeviceStatus] = mapped_column(
         Enum(DeviceStatus),
         default=DeviceStatus.ACTIVE,
@@ -64,6 +74,27 @@ class Device(Base):
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_throttled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     throttle_limit_mbps: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Bandwidth threshold settings
+    bandwidth_threshold_mbps: Mapped[float | None] = mapped_column(
+        Float, nullable=True, comment="Bandwidth threshold in Mbps - triggers alert/deactivation"
+    )
+    auto_deactivate_on_threshold: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, comment="Auto-deactivate when threshold exceeded"
+    )
+    threshold_time_window_minutes: Mapped[int] = mapped_column(
+        Integer,
+        default=5,
+        nullable=False,
+        comment="Time window for threshold evaluation in minutes",
+    )
+    threshold_breach_count: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, comment="Number of times threshold has been breached"
+    )
+    last_threshold_breach: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="Last time threshold was breached"
+    )
+
     total_bytes_sent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_bytes_received: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -109,6 +140,11 @@ class Device(Base):
     __table_args__ = (
         Index("idx_device_status_last_seen", "status", "last_seen"),
         Index("idx_device_ip_mac", "ip_address", "mac_address"),
+        Index("idx_device_type_status", "device_type", "status"),
+        Index("idx_device_manufacturer", "manufacturer"),
+        Index("idx_device_threshold", "bandwidth_threshold_mbps", "status"),
+        Index("idx_device_is_blocked", "is_blocked"),
+        Index("idx_device_is_throttled", "is_throttled"),
     )
 
     @property

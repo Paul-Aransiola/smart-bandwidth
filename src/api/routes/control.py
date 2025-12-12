@@ -5,8 +5,10 @@ API routes for bandwidth control operations.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.dependencies.auth import get_current_user
 from src.core.database import get_db
 from src.core.exceptions import BandwidthControlException
+from src.models.device import DeviceStatus
 from src.repositories.device_repository import (
     BlockHistoryRepository,
     DeviceRepository,
@@ -23,7 +25,7 @@ from src.services.websocket_manager import manager as ws_manager
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter()
+router = APIRouter(prefix="/control")
 
 
 @router.post(
@@ -41,6 +43,7 @@ async def block_device(
     ip_address: str,
     request: BlockDeviceRequest,
     db: AsyncSession = Depends(get_db),
+    # current_user=Depends(get_current_user),  # TODO: Re-enable when auth is implemented
 ):
     """
     Block a device by IP address.
@@ -91,7 +94,7 @@ async def block_device(
 
         # Update device status
         device.is_blocked = True
-        device.status = "blocked"
+        device.status = DeviceStatus.BLOCKED
         await device_repo.update(device)
 
         # Record in history
@@ -104,8 +107,12 @@ async def block_device(
         )
         await history_repo.create(history)
 
+        # Commit all database changes
+        await db.commit()
+
         logger.info(f"Successfully blocked device: {ip_address}")
 
+        # Log the action
         # Broadcast WebSocket update
         device_data = DeviceResponse.model_validate(device).model_dump()
         await ws_manager.broadcast_device_update(device_data, "device_blocked")
@@ -143,6 +150,7 @@ async def block_device(
 async def unblock_device(
     ip_address: str,
     db: AsyncSession = Depends(get_db),
+    # current_user=Depends(get_current_user),  # TODO: Re-enable when auth is implemented
 ):
     """
     Unblock a device by IP address.
@@ -192,7 +200,7 @@ async def unblock_device(
 
         # Update device status
         device.is_blocked = False
-        device.status = "active" if not device.is_throttled else "throttled"
+        device.status = DeviceStatus.ACTIVE if not device.is_throttled else DeviceStatus.THROTTLED
         await device_repo.update(device)
 
         # Record in history
@@ -204,8 +212,12 @@ async def unblock_device(
         )
         await history_repo.create(history)
 
+        # Commit all database changes
+        await db.commit()
+
         logger.info(f"Successfully unblocked device: {ip_address}")
 
+        # Log the action
         # Broadcast WebSocket update
         device_data = DeviceResponse.model_validate(device).model_dump()
         await ws_manager.broadcast_device_update(device_data, "device_unblocked")
@@ -244,6 +256,7 @@ async def throttle_device(
     ip_address: str,
     request: ThrottleDeviceRequest,
     db: AsyncSession = Depends(get_db),
+    # current_user=Depends(get_current_user),  # TODO: Re-enable when auth is implemented
 ):
     """
     Throttle a device by IP address.
@@ -295,7 +308,7 @@ async def throttle_device(
         # Update device status
         device.is_throttled = True
         device.throttle_limit_mbps = request.limit_mbps
-        device.status = "throttled"
+        device.status = DeviceStatus.THROTTLED
         await device_repo.update(device)
 
         # Record in history
@@ -309,8 +322,12 @@ async def throttle_device(
         )
         await history_repo.create(history)
 
+        # Commit all database changes
+        await db.commit()
+
         logger.info(f"Successfully throttled device: {ip_address} to {request.limit_mbps} Mbps")
 
+        # Log the action
         # Broadcast WebSocket update
         device_data = DeviceResponse.model_validate(device).model_dump()
         await ws_manager.broadcast_device_update(device_data, "device_throttled")
@@ -348,6 +365,7 @@ async def throttle_device(
 async def unthrottle_device(
     ip_address: str,
     db: AsyncSession = Depends(get_db),
+    # current_user=Depends(get_current_user),  # TODO: Re-enable when auth is implemented
 ):
     """
     Remove throttle from a device by IP address.
@@ -398,7 +416,7 @@ async def unthrottle_device(
         # Update device status
         device.is_throttled = False
         device.throttle_limit_mbps = None
-        device.status = "active" if not device.is_blocked else "blocked"
+        device.status = DeviceStatus.ACTIVE if not device.is_blocked else DeviceStatus.BLOCKED
         await device_repo.update(device)
 
         # Record in history
@@ -410,8 +428,12 @@ async def unthrottle_device(
         )
         await history_repo.create(history)
 
+        # Commit all database changes
+        await db.commit()
+
         logger.info(f"Successfully removed throttle from device: {ip_address}")
 
+        # Log the action
         # Broadcast WebSocket update
         device_data = DeviceResponse.model_validate(device).model_dump()
         await ws_manager.broadcast_device_update(device_data, "device_unthrottled")

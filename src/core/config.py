@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="sqlite+aiosqlite:///./bandwidth_monitor.db", description="Database connection URL"
     )
+    db_pool_size: int = Field(default=5, description="Database connection pool size")
+    db_max_overflow: int = Field(default=10, description="Max overflow connections")
+    db_pool_timeout: int = Field(default=30, description="Pool timeout in seconds")
 
     # Security
     secret_key: str = Field(
@@ -70,7 +73,11 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"],
+        default=[
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8000",
+        ],
         description="Allowed CORS origins",
     )
 
