@@ -7,8 +7,6 @@ import { Button } from "../components/Button";
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   XAxis,
   YAxis,
   CartesianGrid,

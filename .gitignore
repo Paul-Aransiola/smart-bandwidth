@@ -67,4 +67,6 @@ temp/
 *.tmp
 
 # OS
-Thumbs.db
+Thumbs.
+
+node_modules
