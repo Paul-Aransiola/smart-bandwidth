@@ -32,6 +32,19 @@ class DeviceRepository(BaseRepository[Device]):
         result = await self.session.execute(select(Device).where(Device.ip_address == ip_address))
         return result.scalar_one_or_none()
 
+    async def get(self, id: int) -> Device | None:
+        """
+        Get device by ID.
+
+        Args:
+            id: Device ID
+
+        Returns:
+            Device instance or None
+        """
+        result = await self.session.execute(select(Device).where(Device.id == id))
+        return result.scalar_one_or_none()
+
     async def get_by_mac(self, mac_address: str) -> Device | None:
         """
         Get device by MAC address.
@@ -103,6 +116,41 @@ class DeviceRepository(BaseRepository[Device]):
         """
         result = await self.session.execute(
             select(Device).where(Device.is_throttled == True)  # noqa: E712
+        )
+        return list(result.scalars().all())
+
+    async def get_all_active(self) -> list[Device]:
+        """
+        Get all active devices (not blocked or deactivated).
+
+        Returns:
+            List of active devices
+        """
+        result = await self.session.execute(
+            select(Device).where(
+                and_(
+                    Device.status.in_([DeviceStatus.ACTIVE, DeviceStatus.THROTTLED]),
+                    Device.is_blocked == False,  # noqa: E712
+                )
+            )
+        )
+        return list(result.scalars().all())
+
+    async def get_devices_with_thresholds(self) -> list[Device]:
+        """
+        Get all devices with bandwidth thresholds configured.
+
+        Returns:
+            List of devices with thresholds set
+        """
+        result = await self.session.execute(
+            select(Device).where(
+                and_(
+                    Device.bandwidth_threshold_mbps.isnot(None),
+                    Device.bandwidth_threshold_mbps > 0,
+                    Device.status != DeviceStatus.DEACTIVATED,
+                )
+            )
         )
         return list(result.scalars().all())
 

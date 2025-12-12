@@ -2,6 +2,8 @@
 WebSocket endpoints for real-time monitoring.
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -62,6 +64,9 @@ async def websocket_monitor(
                         "mac_address": device.mac_address,
                         "hostname": device.hostname,
                         "device_name": device.device_name,
+                        "device_type": device.device_type,
+                        "manufacturer": device.manufacturer,
+                        "os_type": device.os_type,
                         "status": device.status.value,
                         "is_blocked": device.is_blocked,
                         "is_throttled": device.is_throttled,
@@ -95,15 +100,24 @@ async def websocket_stats(websocket: WebSocket):
     WebSocket endpoint for real-time bandwidth statistics.
 
     Provides live updates of network statistics and top bandwidth consumers.
+    Clients will receive automatic updates every 2 seconds with:
+    - bandwidth_history: Last 20 data points
+    - protocols: Protocol distribution percentages
+    - current_bandwidth: Real-time bandwidth in Mbps
+    - active_devices: Number of currently active devices
+    - total_devices: Total unique devices seen
     """
     await manager.connect(websocket)
 
     try:
+        # Send ping/pong to keep connection alive
         while True:
             data = await websocket.receive_text()
 
             if data == "ping":
-                await manager.send_personal_message({"type": "pong", "timestamp": "now"}, websocket)
+                await manager.send_personal_message(
+                    {"type": "pong", "timestamp": datetime.now().isoformat()}, websocket
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)

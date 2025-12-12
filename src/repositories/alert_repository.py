@@ -57,21 +57,24 @@ class AlertRuleRepository(BaseRepository[AlertRule]):
         Returns:
             List of rules ready to trigger
         """
-        now = datetime.now()
+        # Fetch all enabled rules and filter in Python since SQLite doesn't support interval arithmetic
         result = await self.session.execute(
-            select(AlertRule).where(
-                AlertRule.is_enabled == True,  # noqa: E712
-                (
-                    (AlertRule.last_triggered_at == None)  # noqa: E711
-                    | (
-                        AlertRule.last_triggered_at
-                        + func.make_interval(0, 0, 0, 0, 0, AlertRule.cooldown_minutes)
-                        <= now
-                    )
-                ),
-            )
+            select(AlertRule).where(AlertRule.is_enabled == True)  # noqa: E712
         )
-        return list(result.scalars().all())
+        all_rules = list(result.scalars().all())
+
+        # Filter rules that are past cooldown period
+        now = datetime.now()
+        ready_rules = []
+        for rule in all_rules:
+            if rule.last_triggered_at is None:
+                ready_rules.append(rule)
+            else:
+                cooldown_end = rule.last_triggered_at + timedelta(minutes=rule.cooldown_minutes)
+                if cooldown_end <= now:
+                    ready_rules.append(rule)
+
+        return ready_rules
 
 
 class AlertRepository(BaseRepository[Alert]):

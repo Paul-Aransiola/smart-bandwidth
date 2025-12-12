@@ -7,8 +7,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.dependencies.auth import get_current_user
 from src.core.database import get_db
-from src.models.alert import AlertSeverity, AlertStatus
+from src.models.alert import AlertRule, AlertSeverity, AlertStatus
 from src.repositories.alert_repository import AlertRepository, AlertRuleRepository
 from src.schemas.alert import (
     AlertResponse,
@@ -36,12 +37,25 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
     status_code=status.HTTP_201_CREATED,
 )
 async def create_alert_rule(
-    rule_data: AlertRuleCreate, db: AsyncSession = Depends(get_db)
+    rule_data: AlertRuleCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
 ) -> APIResponse[AlertRuleResponse]:
     """Create a new alert rule."""
     try:
+        import json
+
         rule_repo = AlertRuleRepository(db)
-        rule = await rule_repo.create(rule_data.model_dump())
+
+        # Convert Pydantic model to dict and serialize notification_config to JSON
+        rule_dict = rule_data.model_dump()
+        if rule_dict.get("notification_config"):
+            rule_dict["notification_config"] = json.dumps(rule_dict["notification_config"])
+
+        # Create AlertRule model instance from dict
+        rule = AlertRule(**rule_dict)
+        rule = await rule_repo.create(rule)
+        await db.commit()
 
         return APIResponse(
             success=True,
@@ -105,7 +119,7 @@ async def get_alert_rule(
     """Get a specific alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
-        rule = await rule_repo.get(rule_id)
+        rule = await rule_repo.get_by_id(rule_id)
 
         if not rule:
             raise HTTPException(
@@ -131,23 +145,36 @@ async def get_alert_rule(
 
 @router.put("/rules/{rule_id}", response_model=APIResponse[AlertRuleResponse])
 async def update_alert_rule(
-    rule_id: int, rule_data: AlertRuleUpdate, db: AsyncSession = Depends(get_db)
+    rule_id: int,
+    rule_data: AlertRuleUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
 ) -> APIResponse[AlertRuleResponse]:
     """Update an alert rule."""
     try:
+        import json
+
         rule_repo = AlertRuleRepository(db)
 
         # Check if rule exists
-        rule = await rule_repo.get(rule_id)
+        rule = await rule_repo.get_by_id(rule_id)
         if not rule:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Alert rule {rule_id} not found",
             )
 
-        # Update rule
+        # Update rule - serialize notification_config if present
         update_data = rule_data.model_dump(exclude_unset=True)
-        updated_rule = await rule_repo.update(rule_id, update_data)
+        if "notification_config" in update_data and update_data["notification_config"]:
+            update_data["notification_config"] = json.dumps(update_data["notification_config"])
+
+        # Apply updates to the model instance
+        for key, value in update_data.items():
+            setattr(rule, key, value)
+
+        updated_rule = await rule_repo.update(rule)
+        await db.commit()
 
         return APIResponse(
             success=True,
@@ -170,13 +197,15 @@ async def update_alert_rule(
     response_model=APIResponse[None],
     status_code=status.HTTP_200_OK,
 )
-async def delete_alert_rule(rule_id: int, db: AsyncSession = Depends(get_db)) -> APIResponse[None]:
+async def delete_alert_rule(
+    rule_id: int, db: AsyncSession = Depends(get_db), current_user=Depends(get_current_user)
+) -> APIResponse[None]:
     """Delete an alert rule."""
     try:
         rule_repo = AlertRuleRepository(db)
 
         # Check if rule exists
-        rule = await rule_repo.get(rule_id)
+        rule = await rule_repo.get_by_id(rule_id)
         if not rule:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -184,7 +213,8 @@ async def delete_alert_rule(rule_id: int, db: AsyncSession = Depends(get_db)) ->
             )
 
         # Delete rule
-        await rule_repo.delete(rule_id)
+        await rule_repo.delete(rule)
+        await db.commit()
 
         return APIResponse(success=True, message="Alert rule deleted successfully", data=None)
 
@@ -205,9 +235,7 @@ async def test_alert_rule(rule_id: int, db: AsyncSession = Depends(get_db)) -> A
         alert_service = AlertService(db)
         results = await alert_service.test_rule(rule_id)
 
-        return APIResponse(
-            success=True, message="Alert rule tested successfully", data=results
-        )
+        return APIResponse(success=True, message="Alert rule tested successfully", data=results)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -331,7 +359,9 @@ async def list_recent_alerts(
 
 
 @router.get("/{alert_id}", response_model=APIResponse[AlertResponse])
-async def get_alert(alert_id: int, db: AsyncSession = Depends(get_db)) -> APIResponse[AlertResponse]:
+async def get_alert(
+    alert_id: int, db: AsyncSession = Depends(get_db)
+) -> APIResponse[AlertResponse]:
     """Get a specific alert."""
     try:
         alert_repo = AlertRepository(db)

@@ -3,6 +3,7 @@ Bandwidth control service using iptables and tc (traffic control).
 Handles blocking and throttling of devices.
 """
 
+import platform
 import subprocess
 from typing import Any
 
@@ -17,13 +18,21 @@ settings = get_settings()
 class BandwidthController:
     """
     Bandwidth control service for blocking and throttling devices.
-    Uses iptables for blocking and tc (traffic control) for throttling.
+    Uses iptables for blocking and tc (traffic control) for throttling on Linux.
+    Uses mock implementation on non-Linux platforms for development/testing.
     """
 
     def __init__(self):
         """Initialize bandwidth controller."""
         self.logger = logger
         self.interface = settings.network_interface
+        self.is_linux = platform.system() == "Linux"
+
+        if not self.is_linux:
+            self.logger.warning(
+                f"Running on {platform.system()}. Using mock bandwidth control "
+                "(iptables/tc not available). Operations will be simulated."
+            )
 
     async def block_device(self, ip_address: str) -> bool:
         """
@@ -41,6 +50,11 @@ class BandwidthController:
         if not settings.enable_blocking:
             self.logger.warning("Blocking is disabled in configuration")
             return False
+
+        # Mock implementation for non-Linux platforms
+        if not self.is_linux:
+            self.logger.info(f"[MOCK] Blocking device: {ip_address}")
+            return True
 
         try:
             self.logger.info(f"Blocking device: {ip_address}")
@@ -71,6 +85,11 @@ class BandwidthController:
         Raises:
             BandwidthControlException: If unblocking fails
         """
+        # Mock implementation for non-Linux platforms
+        if not self.is_linux:
+            self.logger.info(f"[MOCK] Unblocking device: {ip_address}")
+            return True
+
         try:
             self.logger.info(f"Unblocking device: {ip_address}")
 
@@ -104,6 +123,11 @@ class BandwidthController:
         if not settings.enable_throttling:
             self.logger.warning("Throttling is disabled in configuration")
             return False
+
+        # Mock implementation for non-Linux platforms
+        if not self.is_linux:
+            self.logger.info(f"[MOCK] Throttling device {ip_address} to {limit_mbps} Mbps")
+            return True
 
         try:
             self.logger.info(f"Throttling device {ip_address} to {limit_mbps} Mbps")
@@ -190,6 +214,10 @@ class BandwidthController:
         Raises:
             BandwidthControlException: If unthrottling fails
         """
+        # Mock implementation for non-Linux platforms
+        if not self.is_linux:
+            self.logger.info(f"[MOCK] Unthrottling device: {ip_address}")
+            return True
         try:
             self.logger.info(f"Removing throttling from device: {ip_address}")
 
@@ -246,8 +274,12 @@ class BandwidthController:
         Check if required tools (iptables, tc) are available.
 
         Returns:
-            True if tools are available
+            True if tools are available or running in mock mode
         """
+        # Mock mode is always "available"
+        if not self.is_linux:
+            return True
+
         try:
             self._run_command(["which", "iptables"])
             self._run_command(["which", "tc"])
@@ -263,6 +295,9 @@ class BandwidthController:
             Dictionary with controller status
         """
         return {
+            "platform": platform.system(),
+            "is_linux": self.is_linux,
+            "mock_mode": not self.is_linux,
             "tools_available": self.is_available(),
             "blocking_enabled": settings.enable_blocking,
             "throttling_enabled": settings.enable_throttling,

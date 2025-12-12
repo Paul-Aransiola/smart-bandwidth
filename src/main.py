@@ -10,12 +10,29 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from src.api.routes import alerts, control, devices, health, reports, stats, websocket
+from src.api.routes import (
+    advanced_controls,
+    alerts,
+    auth,
+    control,
+    dashboard,
+    devices,
+    health,
+    reports,
+    stats,
+    threshold,
+    websocket,
+)
 from src.core.config import get_settings
 from src.core.database import close_db, get_db, init_db
 from src.core.exceptions import BandwidthMonitorException
 from src.schemas.response import error_response, success_response
 from src.services.network_monitor import NetworkMonitor
+from src.services.realtime_stats import (
+    start_realtime_stats_service,
+    stop_realtime_stats_service,
+)
+from src.services.threshold_monitor import get_threshold_monitor
 from src.services.websocket_manager import manager as ws_manager
 from src.utils.logger import get_logger, setup_logging
 
@@ -45,6 +62,21 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize database: {e}")
         raise
 
+    # Start real-time stats collection service
+    try:
+        await start_realtime_stats_service()
+        logger.info("Real-time stats collection service started")
+    except Exception as e:
+        logger.warning(f"Failed to start real-time stats service: {e}")
+
+    # Start bandwidth threshold monitoring service
+    try:
+        threshold_monitor = get_threshold_monitor()
+        await threshold_monitor.start()
+        logger.info("Bandwidth threshold monitoring service started")
+    except Exception as e:
+        logger.warning(f"Failed to start threshold monitoring: {e}")
+
     # Start network monitoring if enabled
     if settings.enable_monitoring:
         try:
@@ -63,6 +95,21 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down Smart Bandwidth Monitor API")
+
+    # Stop real-time stats service
+    try:
+        await stop_realtime_stats_service()
+        logger.info("Real-time stats service stopped")
+    except Exception as e:
+        logger.error(f"Error stopping real-time stats service: {e}")
+
+    # Stop threshold monitoring service
+    try:
+        threshold_monitor = get_threshold_monitor()
+        await threshold_monitor.stop()
+        logger.info("Threshold monitoring service stopped")
+    except Exception as e:
+        logger.error(f"Error stopping threshold monitoring: {e}")
 
     # Stop monitoring task
     if monitoring_task and not monitoring_task.done():
@@ -96,7 +143,8 @@ async def periodic_bandwidth_save():
     from datetime import datetime
 
     from src.core.database import AsyncSessionLocal
-    from src.models.device import BandwidthUsage, Device
+    from src.models.device import BandwidthUsage, Device, DeviceStatus
+    from src.models.settings import GlobalSettings
     from src.repositories.bandwidth_repository import BandwidthUsageRepository
     from src.repositories.device_repository import DeviceRepository
     from src.services.alert_service import AlertService
@@ -111,10 +159,12 @@ async def periodic_bandwidth_save():
         try:
             await asyncio.sleep(settings.monitoring_interval)
 
+            # Only collect stats if network monitor is running (no estimation/simulation)
             if not network_monitor or not network_monitor.is_running:
+                logger.debug("Network monitor not running - no bandwidth data to collect")
                 continue
 
-            # Get all device stats from network monitor
+            # Get per-device stats from network monitor (real packet capture only)
             stats = network_monitor.get_all_stats()
 
             if not stats:
@@ -138,13 +188,28 @@ async def periodic_bandwidth_save():
                     # Find or create device
                     device = await device_repo.get_by_ip(ip_address)
                     if not device:
+                        # Get MAC address from stat or use placeholder based on IP
+                        mac_address = stat.get("mac_address", "")
+                        if not mac_address:
+                            # Use IP-based placeholder to avoid UNIQUE constraint violations
+                            # Format: 00:00:IP1:IP2:IP3:IP4
+                            ip_parts = ip_address.split(".")
+                            if len(ip_parts) == 4:
+                                mac_address = f"00:00:{int(ip_parts[0]):02x}:{int(ip_parts[1]):02x}:{int(ip_parts[2]):02x}:{int(ip_parts[3]):02x}"
+                            else:
+                                # Skip if we can't generate a valid MAC
+                                logger.warning(
+                                    f"Skipping device {ip_address}: Invalid IP format and no MAC"
+                                )
+                                continue
+
                         # Create new device
                         device = Device(
                             ip_address=ip_address,
-                            mac_address="",  # Will be populated later
-                            hostname="",
+                            mac_address=mac_address,
+                            hostname=stat.get("hostname", ""),
                             device_name=f"Device {ip_address}",
-                            status="active",
+                            status=DeviceStatus.ACTIVE,
                             first_seen=datetime.now(),
                             last_seen=datetime.now(),
                             is_blocked=False,
@@ -153,7 +218,7 @@ async def periodic_bandwidth_save():
                             total_bytes_received=0,
                         )
                         device = await device_repo.create(device)
-                        logger.info(f"Created new device: {ip_address}")
+                        logger.info(f"Created new device: {ip_address} (MAC: {mac_address})")
 
                     # Update device bandwidth totals
                     device.total_bytes_sent += bytes_sent
@@ -166,6 +231,14 @@ async def periodic_bandwidth_save():
                         device_id=device.id,
                         bytes_sent=bytes_sent,
                         bytes_received=bytes_received,
+                        packets_sent=0,
+                        packets_received=0,
+                        upload_speed_mbps=round(
+                            bytes_sent * 8 / (settings.monitoring_interval * 1_000_000), 2
+                        ),
+                        download_speed_mbps=round(
+                            bytes_received * 8 / (settings.monitoring_interval * 1_000_000), 2
+                        ),
                         timestamp=datetime.now(),
                     )
                     await bandwidth_repo.create(bandwidth_record)
@@ -173,11 +246,28 @@ async def periodic_bandwidth_save():
                 await session.commit()
                 logger.debug(f"Saved bandwidth data for {len(stats)} devices")
 
-                # Broadcast bandwidth stats via WebSocket
+            # Get device counts from database (outside transaction)
+            async with AsyncSessionLocal() as count_session:
+                device_repo_count = DeviceRepository(count_session)
+                all_devices = await device_repo_count.get_all(skip=0, limit=1000)
+                active_devices = [d for d in all_devices if d.status.value == "active"]
+
+                # Calculate aggregated bandwidth for dashboard
+                total_bandwidth = sum(stat["bytes_sent"] + stat["bytes_received"] for stat in stats)
+
+                # Broadcast bandwidth stats via WebSocket with dashboard-friendly format
                 await ws_manager.broadcast_bandwidth_stats(
                     {
-                        "total_devices": len(stats),
+                        "total_devices": len(all_devices),
+                        "active_devices": len(active_devices),
                         "devices": stats,
+                        "bandwidth_history": [
+                            {
+                                "time": datetime.now().strftime("%H:%M:%S"),
+                                "bandwidth": round(total_bandwidth / 1_000_000, 2),  # Convert to MB
+                                "devices": len(active_devices),
+                            }
+                        ],
                     }
                 )
 
@@ -220,7 +310,9 @@ async def periodic_bandwidth_save():
 
                         if should_reset:
                             await quota_repo.reset_quota(quota.id)
-                            logger.info(f"Auto-reset {quota.quota_type} quota for device {quota.device_id}")
+                            logger.info(
+                                f"Auto-reset {quota.quota_type} quota for device {quota.device_id}"
+                            )
 
                     await quota_session.commit()
 
@@ -235,7 +327,7 @@ async def periodic_bandwidth_save():
                 async with AsyncSessionLocal() as schedule_session:
                     schedule_repo = ThrottleScheduleRepository(schedule_session)
                     device_repo = DeviceRepository(schedule_session)
-                    active_schedules = await schedule_repo.get_active_schedules()
+                    active_schedules = await schedule_repo.get_active_schedules(datetime.now())
 
                     controller = BandwidthController()
 
@@ -245,11 +337,13 @@ async def periodic_bandwidth_save():
                             continue
 
                         # Apply throttle if not already throttled
-                        if not device.is_throttled or device.throttle_limit_mbps != schedule.throttle_limit_mbps:
+                        if (
+                            not device.is_throttled
+                            or device.throttle_limit_mbps != schedule.throttle_limit_mbps
+                        ):
                             try:
                                 await controller.throttle(
-                                    device.ip_address,
-                                    schedule.throttle_limit_mbps
+                                    device.ip_address, schedule.throttle_limit_mbps
                                 )
                                 device.is_throttled = True
                                 device.throttle_limit_mbps = schedule.throttle_limit_mbps
@@ -337,12 +431,16 @@ async def bandwidth_monitor_exception_handler(request, exc: BandwidthMonitorExce
 
 
 # Include routers
+app.include_router(auth.router, prefix=settings.api_prefix, tags=["Authentication"])
 app.include_router(health.router, prefix=settings.api_prefix, tags=["Health"])
+app.include_router(dashboard.router, prefix=settings.api_prefix, tags=["Dashboard"])
 app.include_router(devices.router, prefix=settings.api_prefix, tags=["Devices"])
 app.include_router(stats.router, prefix=settings.api_prefix, tags=["Statistics"])
 app.include_router(reports.router, prefix=settings.api_prefix, tags=["Reports"])
 app.include_router(alerts.router, prefix=settings.api_prefix, tags=["Alerts"])
+app.include_router(threshold.router, prefix=settings.api_prefix, tags=["Threshold"])
 app.include_router(control.router, prefix=settings.api_prefix, tags=["Control"])
+app.include_router(advanced_controls.router, prefix=settings.api_prefix, tags=["Advanced Controls"])
 app.include_router(websocket.router, tags=["WebSocket"])
 
 # Mount static files for dashboard

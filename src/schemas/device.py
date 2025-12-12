@@ -15,6 +15,7 @@ class DeviceStatus(str, Enum):
     INACTIVE = "inactive"
     BLOCKED = "blocked"
     THROTTLED = "throttled"
+    DEACTIVATED = "deactivated"
 
 
 # Base schemas
@@ -27,19 +28,32 @@ class DeviceBase(BaseModel):
     device_name: str | None = Field(
         None, description="Custom device name", examples=["John's Laptop"]
     )
+    device_type: str | None = Field(
+        None, description="Device type classification", examples=["mobile", "computer", "router"]
+    )
+    manufacturer: str | None = Field(
+        None, description="Device manufacturer", examples=["Apple", "Samsung"]
+    )
+    os_type: str | None = Field(
+        None, description="Operating system type", examples=["iOS", "Android", "Windows"]
+    )
     notes: str | None = Field(None, description="Additional notes")
 
     @field_validator("mac_address")
     @classmethod
     def validate_mac_address(cls, v: str) -> str:
-        """Validate MAC address format."""
+        """Validate and normalize MAC address format."""
         v = v.upper().replace("-", ":").replace(".", ":")
         parts = v.split(":")
+
+        # Pad single-digit hex values with leading zero
+        parts = [p.zfill(2) if len(p) == 1 else p for p in parts]
+
         if len(parts) != 6 or not all(
             len(p) == 2 and all(c in "0123456789ABCDEF" for c in p) for p in parts
         ):
             raise ValueError("Invalid MAC address format")
-        return v
+        return ":".join(parts)
 
     @field_validator("ip_address")
     @classmethod
@@ -58,6 +72,7 @@ class DeviceBase(BaseModel):
 
 class DeviceCreate(DeviceBase):
     """Schema for creating a device."""
+
     pass
 
 
@@ -68,6 +83,15 @@ class DeviceUpdate(BaseModel):
     device_name: str | None = None
     notes: str | None = None
     status: DeviceStatus | None = None
+    bandwidth_threshold_mbps: float | None = Field(
+        None, ge=0, description="Bandwidth threshold in Mbps"
+    )
+    auto_deactivate_on_threshold: bool | None = Field(
+        None, description="Auto-deactivate when threshold exceeded"
+    )
+    threshold_time_window_minutes: int | None = Field(
+        None, ge=1, le=1440, description="Time window for threshold check (1-1440 minutes)"
+    )
 
 
 class DeviceResponse(DeviceBase):
@@ -82,6 +106,11 @@ class DeviceResponse(DeviceBase):
     is_blocked: bool
     is_throttled: bool
     throttle_limit_mbps: float | None
+    bandwidth_threshold_mbps: float | None
+    auto_deactivate_on_threshold: bool
+    threshold_time_window_minutes: int
+    threshold_breach_count: int
+    last_threshold_breach: datetime | None
     total_bytes_sent: int
     total_bytes_received: int
 

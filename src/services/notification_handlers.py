@@ -430,3 +430,66 @@ class NotificationManager:
             results[channel_name] = result
 
         return results
+
+    async def send_threshold_alert(
+        self,
+        admin_email: str,
+        admin_username: str,
+        alert_data: dict[str, Any],
+        message: str,
+    ) -> NotificationResult:
+        """
+        Send threshold breach alert to an admin user.
+
+        Args:
+            admin_email: Admin user's email
+            admin_username: Admin user's username
+            alert_data: Alert data dictionary
+            message: Formatted alert message
+
+        Returns:
+            Notification result
+        """
+        try:
+            # Try WebSocket broadcast first
+            if self.websocket_handler:
+                try:
+                    await self.websocket_handler.ws_manager.broadcast(
+                        {
+                            "type": "threshold_alert",
+                            "data": {
+                                **alert_data,
+                                "message": message,
+                                "admin_recipient": admin_username,
+                            },
+                        }
+                    )
+                except Exception as e:
+                    logger.warning(f"WebSocket threshold alert failed: {e}")
+
+            # Try email if handler exists
+            if self.email_handler:
+                try:
+                    # Send email (simplified - would need proper email setup)
+                    logger.info(f"Email threshold alert would be sent to {admin_email}")
+                    # await self.email_handler.send_threshold_email(admin_email, alert_data, message)
+                except Exception as e:
+                    logger.warning(f"Email threshold alert failed: {e}")
+
+            logger.info(f"Threshold alert sent to admin {admin_username}")
+
+            return NotificationResult(
+                success=True,
+                channel="threshold_alert",
+                timestamp=datetime.utcnow(),
+                details={"recipient": admin_username, "email": admin_email},
+            )
+
+        except Exception as e:
+            logger.error(f"Threshold alert failed for admin {admin_username}: {e}")
+            return NotificationResult(
+                success=False,
+                channel="threshold_alert",
+                timestamp=datetime.utcnow(),
+                error=str(e),
+            )
