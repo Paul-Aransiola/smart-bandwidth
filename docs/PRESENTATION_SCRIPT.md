@@ -16,8 +16,6 @@ I'm [Your Name], and I'm excited to share with you a project that solves a probl
 
 **[Slide 2: The Problem - Relatable Scenario]**
 
-Let me paint a picture for you:
-
 Imagine you're in a hostel with 50 students sharing one Wi-Fi connection. It's 11 PM, you have an assignment due at midnight, and suddenly—your internet slows to a crawl. You can't even load Google.
 
 You find out later that three people were streaming Netflix in 4K, two were downloading games on Steam, and someone was running a torrent server. Meanwhile, the rest of you couldn't even check your email.
@@ -65,7 +63,7 @@ There's a real business and quality-of-life impact here.
 
 **[Slide 5: Introducing Smart Bandwidth Monitor]**
 
-So, we built **Smart Bandwidth Monitor**—a comprehensive solution that gives you complete visibility and control over your network.
+So, I built **Smart Bandwidth Monitor**—a comprehensive solution that gives you complete visibility and control over your network.
 
 ### What It Does (In Plain English)
 
@@ -591,6 +589,3 @@ After the presentation, share:
 
 And most importantly: **Ask for feedback** to improve future presentations!
 
----
-
-**Good luck with your presentation! You've got this! 🎉**
