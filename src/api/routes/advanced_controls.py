@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies.auth import get_current_user, require_admin
 from src.core.database import get_db
+from src.models.advanced_controls import BandwidthQuota, QoSPolicy, ThrottleSchedule
 
 # User model stub - TODO: implement auth
 from src.repositories.advanced_controls_repository import (
@@ -52,14 +53,22 @@ async def create_quota(
     try:
         repo = BandwidthQuotaRepository(db)
 
-        quota_dict = quota_data.model_dump()
-        quota_dict["used_bytes"] = 0
-        quota_dict["is_active"] = True
+        # Create model instance instead of dict
+        quota = BandwidthQuota(
+            device_id=quota_data.device_id,
+            quota_name=quota_data.quota_name,
+            quota_type=quota_data.quota_type,
+            limit_bytes=quota_data.limit_bytes,
+            used_bytes=0,
+            reset_day=quota_data.reset_day,
+            is_active=True,
+            warning_threshold_percent=quota_data.warning_threshold_percent,
+        )
 
-        quota = await repo.create(quota_dict)
+        created_quota = await repo.create(quota)
         await db.commit()
         return success_response(
-            data=BandwidthQuotaResponse.model_validate(quota).model_dump(),
+            data=BandwidthQuotaResponse.model_validate(created_quota).model_dump(),
             message="Bandwidth quota created successfully",
         )
     except Exception as e:
