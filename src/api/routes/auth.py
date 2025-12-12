@@ -27,6 +27,7 @@ class RegisterRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+    role: UserRole = UserRole.USER  # Default to USER, but can be ADMIN
 
 
 class LoginRequest(BaseModel):
@@ -64,14 +65,14 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         username=data.username,
         email=data.email,
         password_hash=pwd_context.hash(data.password),
-        role=UserRole.USER,
+        role=data.role,  # Use the role from the request
         is_active=True,
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
 
-    return {"id": user.id, "username": user.username, "email": user.email}
+    return {"id": user.id, "username": user.username, "email": user.email, "role": user.role}
 
 
 @router.post("/login", response_model=TokenResponse)

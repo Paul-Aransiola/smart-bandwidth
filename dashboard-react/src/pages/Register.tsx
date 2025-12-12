@@ -1,13 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../lib/axios";
-import { Lock, User, Mail, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Lock,
+  User,
+  Mail,
+  AlertCircle,
+  CheckCircle,
+  Shield,
+} from "lucide-react";
 
 export const Register: React.FC = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<"user" | "admin">("user");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,6 +45,7 @@ export const Register: React.FC = () => {
         username,
         email,
         password,
+        role,
       });
 
       setSuccess(true);
@@ -133,6 +142,47 @@ export const Register: React.FC = () => {
                   disabled={success}
                 />
               </div>
+            </div>
+
+            {/* Role Selector */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Account Type
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield className="text-slate-400" size={20} />
+                </div>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "user" | "admin")}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white appearance-none cursor-pointer"
+                  disabled={success}
+                >
+                  <option value="user">Regular User</option>
+                  <option value="admin">Administrator</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <svg
+                    className="h-5 w-5 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {role === "admin"
+                  ? "Full access to all features and settings"
+                  : "Standard user with basic monitoring access"}
+              </p>
             </div>
 
             {/* Password */}
