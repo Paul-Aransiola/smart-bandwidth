@@ -64,19 +64,19 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100 p-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+          <h1 className="text-4xl font-bold text-emerald-500 mb-2">
             Smart Bandwidth
           </h1>
-          <p className="text-slate-600">Network Monitoring & Control</p>
+          <p className="text-emerald-600">Network Monitoring & Control</p>
         </div>
 
         {/* Register Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+          <h2 className="text-2xl font-bold text-emerald-500 mb-6">
             Create Account
           </h2>
 
@@ -104,18 +104,18 @@ export const Register: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-400 mb-2">
                 Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="text-slate-400" size={20} />
+                  <User className="text-emerald-400" size={20} />
                 </div>
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="Choose a username"
                   required
                   disabled={success}
@@ -125,18 +125,18 @@ export const Register: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-400 mb-2">
                 Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="text-slate-400" size={20} />
+                  <Mail className="text-emerald-400" size={20} />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="Enter your email"
                   required
                   disabled={success}
@@ -146,17 +146,17 @@ export const Register: React.FC = () => {
 
             {/* Role Selector */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-400 mb-2">
                 Account Type
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Shield className="text-slate-400" size={20} />
+                  <Shield className="text-emerald-400" size={20} />
                 </div>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as "user" | "admin")}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white appearance-none cursor-pointer"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white appearance-none cursor-pointer"
                   disabled={success}
                 >
                   <option value="user">Regular User</option>
@@ -164,7 +164,7 @@ export const Register: React.FC = () => {
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg
-                    className="h-5 w-5 text-slate-400"
+                    className="h-5 w-5 text-emerald-400"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -187,43 +187,43 @@ export const Register: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-400 mb-2">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="text-slate-400" size={20} />
+                  <Lock className="text-emerald-400" size={20} />
                 </div>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="Choose a password"
                   required
                   disabled={success}
                   minLength={6}
                 />
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-e-500 mt-1">
                 At least 6 characters
               </p>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-400 mb-2">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="text-slate-400" size={20} />
+                  <Lock className="text-emerald-400" size={20} />
                 </div>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="Confirm your password"
                   required
                   disabled={success}
@@ -235,7 +235,7 @@ export const Register: React.FC = () => {
             <button
               type="submit"
               disabled={loading || success}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-emerald-500 text-white py-3 rounded-lg font-medium hover:bg-emerald-600 transition-colors disabled:bg-emerald-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -256,7 +256,7 @@ export const Register: React.FC = () => {
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-blue-600 hover:text-blue-700 font-medium"
+                className="text-emerald-500 hover:text-emerald-600 font-medium"
               >
                 Sign in
               </Link>
@@ -268,7 +268,7 @@ export const Register: React.FC = () => {
         <div className="mt-4 text-center">
           <button
             onClick={() => navigate("/dashboard")}
-            className="text-sm text-slate-500 hover:text-slate-700"
+            className="text-sm text-emerald-500 hover:text-emerald-600"
           >
             Continue without authentication
           </button>
