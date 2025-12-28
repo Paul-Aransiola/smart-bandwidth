@@ -45,7 +45,7 @@ class TestControlAPIWorkflow:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Step 2: Block the device
             response = await client.post(
-                f"/api/v1/block/{device.ip_address}", json={"reason": "Integration test blocking"}
+                f"/api/v1/control/block/{device.ip_address}", json={"reason": "Integration test blocking"}
             )
             assert (
                 response.status_code == status.HTTP_200_OK
@@ -64,7 +64,7 @@ class TestControlAPIWorkflow:
     async def test_block_nonexistent_device(self, db_session):
         """Test blocking a device that doesn't exist."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/block/192.168.1.999", json={"reason": "Test"})
+            response = await client.post("/api/v1/control/block/192.168.1.999", json={"reason": "Test"})
             assert response.status_code == status.HTTP_404_NOT_FOUND
             assert "not found" in response.json()["detail"].lower()
 
@@ -90,7 +90,7 @@ class TestControlAPIWorkflow:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Throttle device
             response = await client.post(
-                f"/api/v1/throttle/{device.ip_address}",
+                f"/api/v1/control/throttle/{device.ip_address}",
                 json={"limit_mbps": 5.0, "reason": "High bandwidth usage"},
             )
             # Accept both success and error (error expected if tc not available)
@@ -100,7 +100,7 @@ class TestControlAPIWorkflow:
             ]
 
             # Check history
-            history_response = await client.get(f"/api/v1/history/{device.ip_address}")
+            history_response = await client.get(f"/api/v1/control/history/{device.ip_address}")
             assert history_response.status_code == status.HTTP_200_OK
             history_response_data = history_response.json()
             assert history_response_data["success"] is True
@@ -212,7 +212,7 @@ class TestControlAPIWorkflow:
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Unblock device
-            unblock_response = await client.post(f"/api/v1/unblock/{device.ip_address}")
+            unblock_response = await client.post(f"/api/v1/control/unblock/{device.ip_address}")
             # Accept both success and error
             assert unblock_response.status_code in [
                 status.HTTP_200_OK,
@@ -221,7 +221,7 @@ class TestControlAPIWorkflow:
 
             # Try to throttle (should work if unblock succeeded)
             throttle_response = await client.post(
-                f"/api/v1/throttle/{device.ip_address}",
+                f"/api/v1/control/throttle/{device.ip_address}",
                 json={"limit_mbps": 10.0, "reason": "Test throttle after unblock"},
             )
             # Accept various responses based on system capabilities
@@ -252,14 +252,14 @@ class TestControlAPIWorkflow:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             # Try negative limit
             response = await client.post(
-                f"/api/v1/throttle/{device.ip_address}",
+                f"/api/v1/control/throttle/{device.ip_address}",
                 json={"limit_mbps": -10.0, "reason": "Invalid limit"},
             )
             assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
             # Try zero limit
             response = await client.post(
-                f"/api/v1/throttle/{device.ip_address}",
+                f"/api/v1/control/throttle/{device.ip_address}",
                 json={"limit_mbps": 0.0, "reason": "Zero limit"},
             )
             assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT

@@ -24,9 +24,9 @@ from src.api.routes import (
     websocket,
 )
 from src.core.config import get_settings
-from src.core.database import close_db, get_db, init_db
+from src.core.database import close_db, init_db
 from src.core.exceptions import BandwidthMonitorException
-from src.schemas.response import error_response, success_response
+from src.schemas.response import success_response
 from src.services.network_monitor import NetworkMonitor
 from src.services.realtime_stats import (
     start_realtime_stats_service,
@@ -379,24 +379,24 @@ app = FastAPI(
     version=settings.api_version,
     description="""
     Smart Bandwidth Monitor & Control API
-    
+
     A lightweight backend system for monitoring and controlling bandwidth usage
     in shared Wi-Fi networks.
-    
+
     ## Features
-    
+
     * **Real-time Monitoring**: Track bandwidth usage per device (IP/MAC)
     * **Device Management**: Identify and manage connected devices
     * **Bandwidth Control**: Block or throttle high-usage devices
     * **Statistics**: View detailed bandwidth statistics and trends
-    
+
     ## Authentication
-    
+
     Some endpoints require authentication. Use the `/api/v1/auth/login` endpoint
     to obtain an access token.
-    
+
     ## Rate Limiting
-    
+
     API requests are rate-limited to prevent abuse. Check response headers for
     rate limit information.
     """,

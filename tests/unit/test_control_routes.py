@@ -35,7 +35,7 @@ class TestBlockDevice:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.post(
-                    f"/api/v1/block/{sample_device.ip_address}",
+                    f"/api/v1/control/block/{sample_device.ip_address}",
                     json={"reason": "Test blocking"},
                 )
 
@@ -54,7 +54,9 @@ class TestBlockDevice:
     async def test_block_device_not_found(self, db_session):
         """Test blocking a non-existent device."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/block/192.168.1.999", json={"reason": "Test"})
+            response = await client.post(
+                "/api/v1/control/block/192.168.1.999", json={"reason": "Test"}
+            )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "not found" in response.json()["detail"].lower()
@@ -69,7 +71,7 @@ class TestBlockDevice:
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
-                f"/api/v1/block/{sample_device.ip_address}",
+                f"/api/v1/control/block/{sample_device.ip_address}",
                 json={"reason": "Test blocking"},
             )
 
@@ -95,7 +97,7 @@ class TestBlockDevice:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.post(
-                    f"/api/v1/block/{sample_device.ip_address}",
+                    f"/api/v1/control/block/{sample_device.ip_address}",
                     json={"reason": "Test blocking"},
                 )
 
@@ -123,7 +125,7 @@ class TestUnblockDevice:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post(f"/api/v1/unblock/{sample_device.ip_address}")
+                response = await client.post(f"/api/v1/control/unblock/{sample_device.ip_address}")
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
@@ -139,7 +141,7 @@ class TestUnblockDevice:
     async def test_unblock_device_not_found(self, db_session):
         """Test unblocking a non-existent device."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/unblock/192.168.1.999")
+            response = await client.post("/api/v1/control/unblock/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -150,7 +152,7 @@ class TestUnblockDevice:
         await device_repo.create(sample_device)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(f"/api/v1/unblock/{sample_device.ip_address}")
+            response = await client.post(f"/api/v1/control/unblock/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
@@ -179,7 +181,7 @@ class TestThrottleDevice:
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 response = await client.post(
-                    f"/api/v1/throttle/{sample_device.ip_address}",
+                    f"/api/v1/control/throttle/{sample_device.ip_address}",
                     json={"limit_mbps": 10.0, "reason": "High usage"},
                 )
 
@@ -199,7 +201,7 @@ class TestThrottleDevice:
         """Test throttling a non-existent device."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
-                "/api/v1/throttle/192.168.1.999",
+                "/api/v1/control/throttle/192.168.1.999",
                 json={"limit_mbps": 10.0, "reason": "Test"},
             )
 
@@ -215,7 +217,7 @@ class TestThrottleDevice:
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
-                f"/api/v1/throttle/{sample_device.ip_address}",
+                f"/api/v1/control/throttle/{sample_device.ip_address}",
                 json={"limit_mbps": 10.0, "reason": "Test"},
             )
 
@@ -229,7 +231,7 @@ class TestThrottleDevice:
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post(
-                f"/api/v1/throttle/{sample_device.ip_address}",
+                f"/api/v1/control/throttle/{sample_device.ip_address}",
                 json={"limit_mbps": -5.0, "reason": "Test"},
             )
 
@@ -258,7 +260,9 @@ class TestUnthrottleDevice:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                response = await client.post(f"/api/v1/unthrottle/{sample_device.ip_address}")
+                response = await client.post(
+                    f"/api/v1/control/unthrottle/{sample_device.ip_address}"
+                )
 
             # Assertions
             assert response.status_code == status.HTTP_200_OK
@@ -275,7 +279,7 @@ class TestUnthrottleDevice:
     async def test_unthrottle_device_not_found(self, db_session):
         """Test unthrottling a non-existent device."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/unthrottle/192.168.1.999")
+            response = await client.post("/api/v1/control/unthrottle/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -286,7 +290,7 @@ class TestUnthrottleDevice:
         await device_repo.create(sample_device)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(f"/api/v1/unthrottle/{sample_device.ip_address}")
+            response = await client.post(f"/api/v1/control/unthrottle/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
@@ -322,7 +326,7 @@ class TestGetDeviceHistory:
         await history_repo.create(history2)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get(f"/api/v1/history/{sample_device.ip_address}")
+            response = await client.get(f"/api/v1/control/history/{sample_device.ip_address}")
 
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
@@ -335,7 +339,7 @@ class TestGetDeviceHistory:
     async def test_get_device_history_not_found(self, db_session):
         """Test history retrieval for non-existent device."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/history/192.168.1.999")
+            response = await client.get("/api/v1/control/history/192.168.1.999")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -356,7 +360,9 @@ class TestGetDeviceHistory:
             await history_repo.create(history)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get(f"/api/v1/history/{sample_device.ip_address}?limit=5")
+            response = await client.get(
+                f"/api/v1/control/history/{sample_device.ip_address}?limit=5"
+            )
 
         assert response.status_code == status.HTTP_200_OK
         response_data = response.json()
